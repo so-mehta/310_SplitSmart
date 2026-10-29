@@ -1,0 +1,92 @@
+rules_version = '2';
+
+// SplitSmart Firestore security rules (R11, NFR 5.2.5).
+// Publish by pasting this file into Firebase console > Firestore Database > Rules.
+//
+// Collections (see repository/firebase):
+//   users/{userId}             userId = Firebase Auth uid
+//   groups/{groupId}           memberIds array, ownerId
+//   expenses/{expenseId}       groupId, creatorId
+//   settlements/{settlementId} groupId, creatorId, payerId
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function groupData(groupId) {
+      return get(/databases/$(database)/documents/groups/$(groupId)).data;
+    }
+
+    function isMemberOf(groupId) {
+      return signedIn() && request.auth.uid in groupData(groupId).memberIds;
+    }
+
+    function isOwnerOf(groupId) {
+      return signedIn() && groupData(groupId).ownerId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      // Signed-in users can read any profile (add member by email, member names).
+      allow get: if signedIn();
+      // Sign-up checks for a duplicate email and USC ID before the account exists
+      // (SD1: check first, write second), so single-result lookups are allowed
+      // without signing in. Listing the whole collection is not.
+      allow list: if signedIn() || request.query.limit <= 1;
+      // Users create and edit only their own profile.
+      allow create, update: if signedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    match /groups/{groupId} {
+      // Members only. findByMember's array-contains query satisfies this rule.
+      // A missing group reads as "not found" (null), not "permission denied".
+      allow read: if signedIn()
+                  && (resource == null || request.auth.uid in resource.data.memberIds);
+      // The creator becomes the owner and the first member.
+      allow create: if signedIn()
+                    && request.resource.data.ownerId == request.auth.uid
+                    && request.auth.uid in request.resource.data.memberIds;
+      // Owner only: edit, add members, delete. The owner cannot be changed.
+      allow update: if signedIn()
+                    && resource.data.ownerId == request.auth.uid
+                    && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /expenses/{expenseId} {
+      // Members only. findByGroup's groupId query satisfies this rule.
+      // A missing expense reads as "not found" (null) so SD4's failure path works.
+      allow read: if signedIn()
+                  && (resource == null || isMemberOf(resource.data.groupId));
+      allow create: if isMemberOf(request.resource.data.groupId)
+                    && request.resource.data.creatorId == request.auth.uid;
+      // Creator only, and an expense cannot move to another group.
+      allow update: if signedIn()
+                    && resource.data.creatorId == request.auth.uid
+                    && request.resource.data.creatorId == resource.data.creatorId
+                    && request.resource.data.groupId == resource.data.groupId;
+      // Creator, or the group owner when deleting the group (cascade).
+      allow delete: if signedIn()
+                    && (resource.data.creatorId == request.auth.uid
+                        || isOwnerOf(resource.data.groupId));
+    }
+
+    match /settlements/{settlementId} {
+      allow read: if signedIn()
+                  && (resource == null || isMemberOf(resource.data.groupId));
+      // The person recording a settlement must be the one who paid.
+      allow create: if isMemberOf(request.resource.data.groupId)
+                    && request.resource.data.creatorId == request.auth.uid
+                    && request.resource.data.payerId == request.auth.uid;
+      allow update: if signedIn()
+                    && resource.data.creatorId == request.auth.uid
+                    && request.resource.data.creatorId == resource.data.creatorId
+                    && request.resource.data.groupId == resource.data.groupId;
+      allow delete: if signedIn()
+                    && (resource.data.creatorId == request.auth.uid
+                        || isOwnerOf(resource.data.groupId));
+    }
+  }
+}
