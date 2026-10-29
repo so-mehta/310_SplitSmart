@@ -1,52 +1,74 @@
 package com.example.splitsmart.repository;
 
 import com.example.splitsmart.model.User;
-import com.example.splitsmart.service.ResultCallback;
 
 public interface UserRepository {
 
     /**
      * Saves a new user record.
-     * Calls {@code callback.onSuccess(null)} when saved successfully.
      *
      * @param user the user to save
-     * @param callback result callback
      */
-    void save(User user, ResultCallback<Void> callback);
+    void save(User user);
 
     /**
      * Updates an existing user record.
-     * Calls {@code callback.onSuccess(null)} when updated successfully.
      *
      * @param user the user to update
-     * @param callback result callback
      */
-    void update(User user, ResultCallback<Void> callback);
+    void update(User user);
 
     /**
      * Finds a user by their unique ID.
-     * Calls {@code callback.onSuccess(User)} if found, or {@code callback.onSuccess(null)} if no user matches.
      *
      * @param userId the ID of the user to find
-     * @param callback result callback receiving the user or null if not found
+     * @return the User if found, or null if no user matches
      */
-    void findById(String userId, ResultCallback<User> callback);
+    User findById(String userId);
 
     /**
      * Finds a user by their email address.
-     * Calls {@code callback.onSuccess(User)} if found, or {@code callback.onSuccess(null)} if no user matches.
      *
      * @param email the email of the user to find
-     * @param callback result callback receiving the user or null if not found
+     * @return the User if found, or null if no user matches
      */
-    void findByEmail(String email, ResultCallback<User> callback);
+    User findByEmail(String email);
 
     /**
      * Finds a user by their USC ID.
-     * Calls {@code callback.onSuccess(User)} if found, or {@code callback.onSuccess(null)} if no user matches.
      *
      * @param uscId the USC ID of the user to find
-     * @param callback result callback receiving the user or null if not found
+     * @return the User if found, or null if no user matches
      */
-    void findByUscId(String uscId, ResultCallback<User> callback);
+    User findByUscId(String uscId);
+
+    /**
+     * Creates a Firebase Auth account. The password is never stored in Firestore.
+     *
+     * @param email the user's email
+     * @param password the user's password
+     * @return the new account's user ID
+     */
+    String createAuthAccount(String email, String password);
+
+    /**
+     * Signs in with email and password.
+     *
+     * @param email the user's email
+     * @param password the user's password
+     * @return the signed-in user ID, or null if the email or password is wrong
+     */
+    String signIn(String email, String password);
+
+    /**
+     * Signs out the current user.
+     */
+    void signOut();
+
+    /**
+     * Gets the ID of the signed-in user.
+     *
+     * @return the current user ID, or null if no one is signed in
+     */
+    String getCurrentUserId();
 }
