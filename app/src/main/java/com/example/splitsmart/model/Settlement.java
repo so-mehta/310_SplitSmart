@@ -1,6 +1,6 @@
 package com.example.splitsmart.model;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public class Settlement extends Transaction {
     private String payerId;
@@ -16,7 +16,7 @@ public class Settlement extends Transaction {
         this.receiverId = receiverId;
     }
 
-    public Settlement(String transactionId, String groupId, String creatorId, long amountCents, Date date, String note,
+    public Settlement(String transactionId, String groupId, String creatorId, long amountCents, LocalDate date, String note,
                       String payerId, String receiverId) {
         super(transactionId, groupId, creatorId, amountCents, date, note);
         this.payerId = payerId;

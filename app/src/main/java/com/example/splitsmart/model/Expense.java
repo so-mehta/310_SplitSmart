@@ -1,7 +1,7 @@
 package com.example.splitsmart.model;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,7 +27,7 @@ public class Expense extends Transaction {
         this.shares = shares != null ? shares : new ArrayList<>();
     }
 
-    public Expense(String transactionId, String groupId, String creatorId, long amountCents, Date date, String note,
+    public Expense(String transactionId, String groupId, String creatorId, long amountCents, LocalDate date, String note,
                    String title, Category category, String payerId, SplitMethod splitMethod, List<Share> shares) {
         super(transactionId, groupId, creatorId, amountCents, date, note);
         this.title = title;
@@ -101,10 +101,9 @@ public class Expense extends Transaction {
     }
 
     public List<String> getParticipantIds() {
+        // Participants are the people splitting the cost (one Share each).
+        // The payer is only a participant if they have a share.
         Set<String> participantIds = new LinkedHashSet<>();
-        if (payerId != null) {
-            participantIds.add(payerId);
-        }
         if (shares != null) {
             for (Share share : shares) {
                 if (share != null && share.getUserId() != null) {
@@ -115,15 +114,18 @@ public class Expense extends Transaction {
         return new ArrayList<>(participantIds);
     }
 
-    public Share getShareOf(String userId) {
+    /**
+     * @return the user's share in cents, or 0 if the user is not a participant
+     */
+    public long getShareOf(String userId) {
         if (shares == null || userId == null) {
-            return null;
+            return 0;
         }
         for (Share share : shares) {
             if (share != null && userId.equals(share.getUserId())) {
-                return share;
+                return share.getShareCents();
             }
         }
-        return null;
+        return 0;
     }
 }

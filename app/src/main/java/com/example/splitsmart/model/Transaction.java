@@ -1,19 +1,19 @@
 package com.example.splitsmart.model;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public abstract class Transaction {
     private String transactionId;
     private String groupId;
     private String creatorId;
     private long amountCents;
-    private Date date;
+    private LocalDate date;
     private String note;
 
     public Transaction() {
     }
 
-    public Transaction(String transactionId, String groupId, String creatorId, long amountCents, Date date, String note) {
+    public Transaction(String transactionId, String groupId, String creatorId, long amountCents, LocalDate date, String note) {
         this.transactionId = transactionId;
         this.groupId = groupId;
         this.creatorId = creatorId;
@@ -54,11 +54,11 @@ public abstract class Transaction {
         this.amountCents = amountCents;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 
