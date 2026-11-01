@@ -10,6 +10,21 @@ import com.example.splitsmart.repository.UserRepository;
  */
 public class AccountService {
 
+    // Firebase Auth rejects anything shorter.
+    private static final int MIN_PASSWORD_LENGTH = 6;
+
+    // TODO(Q2): replace with exact Project 2.1 text
+    private static final String ERROR_NAME = "Enter your name.";
+    private static final String ERROR_EMAIL = "Enter a valid USC email address.";
+    private static final String ERROR_USC_ID = "USC ID must be exactly 10 digits.";
+    private static final String ERROR_PASSWORD =
+            "Password must be at least " + MIN_PASSWORD_LENGTH + " characters.";
+    private static final String ERROR_DUPLICATE_EMAIL = "An account with this email already exists.";
+    private static final String ERROR_DUPLICATE_USC_ID = "An account with this USC ID already exists.";
+    private static final String ERROR_LOGIN_FIELDS = "Enter your email and password.";
+    private static final String ERROR_LOGIN = "Incorrect email or password.";
+    private static final String ERROR_NO_PROFILE = "We could not find your profile.";
+
     private final UserRepository userRepository;
     private final InputValidator inputValidator;
 
@@ -30,7 +45,31 @@ public class AccountService {
      *                             already registered
      */
     public User register(String name, String email, String uscId, String password) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String trimmedName = trim(name);
+        String trimmedEmail = trim(email);
+        if (trimmedName.isEmpty()) {
+            throw new ValidationException(ERROR_NAME);
+        }
+        if (!inputValidator.isValidUscEmail(trimmedEmail)) {
+            throw new ValidationException(ERROR_EMAIL);
+        }
+        if (!inputValidator.isValidUscId(uscId)) {
+            throw new ValidationException(ERROR_USC_ID);
+        }
+        if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
+            throw new ValidationException(ERROR_PASSWORD);
+        }
+        if (userRepository.findByEmail(trimmedEmail) != null) {
+            throw new ValidationException(ERROR_DUPLICATE_EMAIL);
+        }
+        if (userRepository.findByUscId(uscId) != null) {
+            throw new ValidationException(ERROR_DUPLICATE_USC_ID);
+        }
+
+        String userId = userRepository.createAuthAccount(trimmedEmail, password);
+        User user = new User(userId, trimmedName, trimmedEmail, uscId);
+        userRepository.save(user);
+        return user;
     }
 
     /**
@@ -39,17 +78,31 @@ public class AccountService {
      * @param email the user's email
      * @param password the user's password
      * @return the logged-in user
-     * @throws ValidationException if a field is empty, or the email or password is wrong
+     * @throws ValidationException if a field is empty, the email or password is wrong, or the
+     *                             account has no profile
      */
     public User login(String email, String password) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String trimmedEmail = trim(email);
+        if (trimmedEmail.isEmpty() || password == null || password.isEmpty()) {
+            throw new ValidationException(ERROR_LOGIN_FIELDS);
+        }
+
+        String userId = userRepository.signIn(trimmedEmail, password);
+        if (userId == null) {
+            throw new ValidationException(ERROR_LOGIN);
+        }
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new ValidationException(ERROR_NO_PROFILE);
+        }
+        return user;
     }
 
     /**
      * Logs out the current user.
      */
     public void logout() {
-        throw new UnsupportedOperationException("Not implemented yet");
+        userRepository.signOut();
     }
 
     /**
@@ -58,7 +111,8 @@ public class AccountService {
      * @return the current user, or null if nobody is logged in
      */
     public User getCurrentUser() {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String userId = userRepository.getCurrentUserId();
+        return userId == null ? null : userRepository.findById(userId);
     }
 
     /**
@@ -69,6 +123,20 @@ public class AccountService {
      * @throws ValidationException if the name is empty or the user does not exist
      */
     public void updateName(String userId, String newName) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String trimmedName = trim(newName);
+        if (trimmedName.isEmpty()) {
+            throw new ValidationException(ERROR_NAME);
+        }
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new ValidationException(ERROR_NO_PROFILE);
+        }
+
+        user.setName(trimmedName);
+        userRepository.update(user);
+    }
+
+    private static String trim(String value) {
+        return value == null ? "" : value.trim();
     }
 }
