@@ -135,14 +135,21 @@ public class SplitCalculator {
             }
             long hundredths = Math.round(percent * 100);
             hundredthsSum += hundredths;
-            shares.add(new Share(participantId,
-                    totalCents * hundredths / HUNDREDTHS_IN_100_PERCENT, percent));
+            shares.add(new Share(participantId, percentOf(totalCents, hundredths), percent));
         }
         if (hundredthsSum != HUNDREDTHS_IN_100_PERCENT) {
             throw new ValidationException(ERROR_PERCENT_SUM);
         }
         giveLeftoverToFirst(totalCents, shares);
         return shares;
+    }
+
+    /**
+     * Floor of total * hundredths / 10000, divided first so a large total cannot overflow.
+     */
+    private static long percentOf(long totalCents, long hundredths) {
+        return totalCents / HUNDREDTHS_IN_100_PERCENT * hundredths
+                + totalCents % HUNDREDTHS_IN_100_PERCENT * hundredths / HUNDREDTHS_IN_100_PERCENT;
     }
 
     private static void giveLeftoverToFirst(long totalCents, List<Share> shares) {

@@ -164,6 +164,14 @@ public class SplitCalculatorTest {
     }
 
     @Test
+    public void percentage_largeTotal_doesNotOverflow() {
+        List<Share> shares = calculator.calculate(9_000_000_000_000_000L, SplitMethod.PERCENTAGE, TWO,
+                inputs(TWO, 75.0, 25.0));
+
+        assertCents(shares, 6_750_000_000_000_000L, 2_250_000_000_000_000L);
+    }
+
+    @Test
     public void percentage_thatSumsBelowOneHundred_isRejected() {
         assertRejected(10000, SplitMethod.PERCENTAGE, THREE, inputs(THREE, 33.33, 33.33, 33.33));
     }
