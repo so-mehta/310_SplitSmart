@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".SplitSmartApp"
         android:allowBackup="true"
@@ -12,8 +14,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.SplitSmart">
+
+        <!-- Flow: Login or SignUp -> GroupList -> GroupDetail (tabs)
+             -> AddEditExpense, ExpenseDetail, RecordSettlement -->
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.auth.LoginActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -22,6 +27,38 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ui.auth.SignUpActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.auth.ProfileActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.group.GroupListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.group.CreateGroupActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.group.GroupDetailActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.expense.AddEditExpenseActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.expense.ExpenseDetailActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.balance.RecordSettlementActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>
