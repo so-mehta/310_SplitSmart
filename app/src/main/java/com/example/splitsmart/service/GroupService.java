@@ -9,6 +9,7 @@ import com.example.splitsmart.repository.GroupRepository;
 import com.example.splitsmart.repository.SettlementRepository;
 import com.example.splitsmart.repository.UserRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,6 +17,13 @@ import java.util.List;
  * repositories, so never run it on the main thread.
  */
 public class GroupService {
+
+    // TODO(Q2): replace with exact Project 2.1 text
+    private static final String ERROR_NAME = "Enter a group name.";
+    private static final String ERROR_NO_GROUP = "This group no longer exists.";
+    private static final String ERROR_NOT_OWNER = "Only the group owner can do this.";
+    private static final String ERROR_UNKNOWN_EMAIL = "No account was found with this email.";
+    private static final String ERROR_ALREADY_MEMBER = "This user is already a member of the group.";
 
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
@@ -41,7 +49,16 @@ public class GroupService {
      * @throws ValidationException if the name is empty
      */
     public Group createGroup(String ownerId, String name, String desc) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        String trimmedName = trim(name);
+        if (trimmedName.isEmpty()) {
+            throw new ValidationException(ERROR_NAME);
+        }
+
+        List<String> memberIds = new ArrayList<>();
+        memberIds.add(ownerId);
+        Group group = new Group(null, trimmedName, trim(desc), ownerId, memberIds);
+        groupRepository.save(group);
+        return group;
     }
 
     /**
@@ -55,7 +72,19 @@ public class GroupService {
      * @throws PermissionException if the caller is not the group owner
      */
     public void addMemberByEmail(String callerId, String groupId, String email) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        Group group = findGroupOwnedBy(callerId, groupId);
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new ValidationException(ERROR_UNKNOWN_EMAIL);
+        }
+        if (group.isMember(user.getUserId())) {
+            throw new ValidationException(ERROR_ALREADY_MEMBER);
+        }
+
+        List<String> memberIds = new ArrayList<>(group.getMemberIds());
+        memberIds.add(user.getUserId());
+        group.setMemberIds(memberIds);
+        groupRepository.update(group);
     }
 
     /**
@@ -69,11 +98,21 @@ public class GroupService {
      * @throws PermissionException if the caller is not the group owner
      */
     public void updateGroup(String callerId, String groupId, String name, String desc) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        Group group = findGroupOwnedBy(callerId, groupId);
+        String trimmedName = trim(name);
+        if (trimmedName.isEmpty()) {
+            throw new ValidationException(ERROR_NAME);
+        }
+
+        group.setName(trimmedName);
+        group.setDescription(trim(desc));
+        groupRepository.update(group);
     }
 
     /**
-     * Deletes a group with its expenses and settlements.
+     * Deletes a group with its expenses and settlements. The group goes last: the Firestore
+     * rules read it to let the owner delete other members' records, and a cascade that fails
+     * partway can then be retried.
      *
      * @param callerId the ID of the user making the change
      * @param groupId the ID of the group
@@ -81,7 +120,11 @@ public class GroupService {
      * @throws PermissionException if the caller is not the group owner
      */
     public void deleteGroup(String callerId, String groupId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        findGroupOwnedBy(callerId, groupId);
+
+        expenseRepository.deleteByGroup(groupId);
+        settlementRepository.deleteByGroup(groupId);
+        groupRepository.delete(groupId);
     }
 
     /**
@@ -91,17 +134,45 @@ public class GroupService {
      * @return the user's groups, or an empty list if they are in none
      */
     public List<Group> getGroupsForUser(String userId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return groupRepository.findByMember(userId);
     }
 
     /**
-     * Gets the members of a group.
+     * Gets the members of a group, leaving out any member ID with no user profile.
      *
      * @param groupId the ID of the group
-     * @return the group's members
+     * @return the group's members, in member list order
      * @throws ValidationException if the group does not exist
      */
     public List<User> getMembers(String groupId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        Group group = findGroup(groupId);
+        List<User> members = new ArrayList<>();
+        for (String memberId : group.getMemberIds()) {
+            User member = userRepository.findById(memberId);
+            if (member != null) {
+                members.add(member);
+            }
+        }
+        return members;
+    }
+
+    private Group findGroup(String groupId) {
+        Group group = groupRepository.findById(groupId);
+        if (group == null) {
+            throw new ValidationException(ERROR_NO_GROUP);
+        }
+        return group;
+    }
+
+    private Group findGroupOwnedBy(String callerId, String groupId) {
+        Group group = findGroup(groupId);
+        if (!group.isOwner(callerId)) {
+            throw new PermissionException(ERROR_NOT_OWNER);
+        }
+        return group;
+    }
+
+    private static String trim(String value) {
+        return value == null ? "" : value.trim();
     }
 }

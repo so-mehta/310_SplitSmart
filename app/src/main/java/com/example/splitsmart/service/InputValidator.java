@@ -1,9 +1,15 @@
 package com.example.splitsmart.service;
 
+import java.util.regex.Pattern;
+
 /**
  * Format checks for user input. Pure logic, safe to call on the main thread.
  */
 public class InputValidator {
+
+    private static final Pattern USC_EMAIL =
+            Pattern.compile("[^@\\s]+@usc\\.edu", Pattern.CASE_INSENSITIVE);
+    private static final Pattern USC_ID = Pattern.compile("\\d{10}");
 
     /**
      * Checks that an email is a USC address.
@@ -12,7 +18,7 @@ public class InputValidator {
      * @return true if it ends with @usc.edu (any case) with text before the @
      */
     public boolean isValidUscEmail(String email) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return email != null && USC_EMAIL.matcher(email).matches();
     }
 
     /**
@@ -22,7 +28,7 @@ public class InputValidator {
      * @return true if it is exactly 10 digits
      */
     public boolean isValidUscId(String id) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return id != null && USC_ID.matcher(id).matches();
     }
 
     /**
@@ -32,6 +38,6 @@ public class InputValidator {
      * @return true if it is greater than 0
      */
     public boolean isValidAmount(long cents) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return cents > 0;
     }
 }
