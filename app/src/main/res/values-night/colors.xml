@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand">#FFE8A0AA</color>
+    <color name="brand_container">#FF5A1520</color>
+    <color name="brand_on_container">#FFFFDADD</color>
+
+    <color name="owe">#FFFFB4AB</color>
+    <color name="owed">#FF7FD99A</color>
+</resources>

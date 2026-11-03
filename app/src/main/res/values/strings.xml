@@ -1,3 +1,79 @@
 <resources>
     <string name="app_name">SplitSmart</string>
+
+    <!-- Shared -->
+    <string name="error_generic">Something went wrong. Check your connection and try again.</string>
+    <string name="error_not_member">You are not a member of this group.</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_add">Add</string>
+
+    <!-- Auth (SD1) -->
+    <string name="title_login">Log in</string>
+    <string name="title_sign_up">Create account</string>
+    <string name="title_profile">Profile</string>
+    <string name="hint_name">Name</string>
+    <string name="hint_email">USC email</string>
+    <string name="hint_usc_id">USC ID</string>
+    <string name="hint_password">Password</string>
+    <string name="action_login">Log in</string>
+    <string name="action_go_to_sign_up">New here? Create an account</string>
+    <string name="action_sign_up">Sign up</string>
+    <string name="action_go_to_login">Already have an account? Log in</string>
+    <string name="action_save_name">Save name</string>
+    <string name="action_logout">Log out</string>
+    <string name="message_name_saved">Name updated.</string>
+
+    <!-- Groups (SD2) -->
+    <string name="title_group_list">Your groups</string>
+    <string name="title_create_group">Create group</string>
+    <string name="title_edit_group">Edit group</string>
+    <string name="empty_groups">You are not in any groups yet</string>
+    <string name="action_create_group">Create group</string>
+    <string name="hint_group_name">Group name</string>
+    <string name="hint_group_desc">Description (optional)</string>
+    <string name="label_owner">Owner</string>
+    <string name="action_add_member">Add member</string>
+    <string name="hint_member_email">Member\'s USC email</string>
+    <string name="menu_profile">Profile</string>
+    <string name="confirm_delete_group_title">Delete this group?</string>
+    <string name="confirm_delete_group_message">All of its expenses and settlements will be deleted too. This cannot be undone.</string>
+    <string name="owner_suffix">%1$s (owner)</string>
+    <string name="group_meta_owner">%1$s · You are the owner</string>
+    <plurals name="member_count">
+        <item quantity="one">%d member</item>
+        <item quantity="other">%d members</item>
+    </plurals>
+
+    <!-- Group detail tabs -->
+    <string name="tab_history">History</string>
+    <string name="tab_balances">Balances</string>
+    <string name="tab_members">Members</string>
+    <string name="tab_summary">Summary</string>
+
+    <!-- Balances (SD5) -->
+    <string name="label_you_owe">You owe</string>
+    <string name="label_you_are_owed">You are owed</string>
+    <string name="balance_you_owe">You owe %1$s %2$s</string>
+    <string name="balance_owes_you">%1$s owes you %2$s</string>
+    <string name="settled_up">Settled up</string>
+    <string name="action_record_settlement">Record settlement</string>
+    <string name="unknown_member">Former member</string>
+
+    <!-- Record settlement (SD6) -->
+    <string name="title_record_settlement">Record settlement</string>
+    <string name="label_pay_to">Pay to</string>
+    <string name="hint_amount">Amount (e.g. 10.50)</string>
+    <string name="hint_note">Note (optional)</string>
+    <string name="nothing_owed">You do not owe anyone</string>
+    <string name="owed_option">%1$s (you owe %2$s)</string>
+
+    <!-- Screens owned by Christine (empty skeletons) -->
+    <string name="title_add_expense">Add expense</string>
+    <string name="title_expense_detail">Expense</string>
+    <string name="placeholder_expense_screen">Expense screen (Christine)</string>
+    <string name="placeholder_history">History (Christine)</string>
+    <string name="placeholder_summary">Monthly summary (Christine)</string>
 </resources>

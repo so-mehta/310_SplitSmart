@@ -11,9 +11,11 @@ import com.example.splitsmart.repository.firebase.FirebaseGroupRepository;
 import com.example.splitsmart.repository.firebase.FirebaseSettlementRepository;
 import com.example.splitsmart.repository.firebase.FirebaseUserRepository;
 import com.example.splitsmart.service.AccountService;
+import com.example.splitsmart.service.BalanceService;
 import com.example.splitsmart.service.ExpenseService;
 import com.example.splitsmart.service.GroupService;
 import com.example.splitsmart.service.InputValidator;
+import com.example.splitsmart.service.SettlementService;
 import com.example.splitsmart.service.SplitCalculator;
 
 /**
@@ -25,6 +27,8 @@ public class SplitSmartApp extends Application {
     private AccountService accountService;
     private GroupService groupService;
     private ExpenseService expenseService;
+    private BalanceService balanceService;
+    private SettlementService settlementService;
 
     @Override
     public void onCreate() {
@@ -39,6 +43,8 @@ public class SplitSmartApp extends Application {
         groupService = new GroupService(groupRepository, userRepository, expenseRepository,
                 settlementRepository);
         expenseService = new ExpenseService(new SplitCalculator(), expenseRepository, groupRepository);
+        balanceService = new BalanceService(expenseRepository, settlementRepository);
+        settlementService = new SettlementService(balanceService, settlementRepository);
     }
 
     public AccountService getAccountService() {
@@ -51,5 +57,13 @@ public class SplitSmartApp extends Application {
 
     public ExpenseService getExpenseService() {
         return expenseService;
+    }
+
+    public BalanceService getBalanceService() {
+        return balanceService;
+    }
+
+    public SettlementService getSettlementService() {
+        return settlementService;
     }
 }

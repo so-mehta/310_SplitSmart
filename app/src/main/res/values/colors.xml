@@ -2,4 +2,13 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Brand (maroon, matches the team documents) -->
+    <color name="brand">#FF7B1E2B</color>
+    <color name="brand_container">#FFF3D9DC</color>
+    <color name="brand_on_container">#FF3B0A12</color>
+
+    <!-- Balance colors: you owe / you are owed -->
+    <color name="owe">#FFB3261E</color>
+    <color name="owed">#FF1B7F3B</color>
 </resources>
