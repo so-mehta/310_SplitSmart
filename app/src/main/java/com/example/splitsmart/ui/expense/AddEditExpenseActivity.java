@@ -62,7 +62,7 @@ public class AddEditExpenseActivity extends AppCompatActivity {
         vm.previewText.observe(this, preview::setText);
         vm.valid.observe(this, value -> updateEnabled());
         vm.busy.observe(this, value -> { status.setText(Boolean.TRUE.equals(value) ? "Please wait..." : ""); updateEnabled(); });
-        vm.error.observe(this, message -> { error.setText(message == null ? "" : message); retry.setVisibility(Boolean.TRUE.equals(vm.loaded.getValue()) ? View.GONE : View.VISIBLE); });
+        vm.error.observe(this, message -> { error.setText(message == null ? "" : message); updateEnabled(); });
         vm.saved.observe(this, done -> { if (Boolean.TRUE.equals(done)) { setResult(RESULT_OK); finish(); } });
         vm.initialize(groupId, userId, getIntent().getStringExtra(EXPENSE_ID), members);
     }
@@ -160,7 +160,12 @@ public class AddEditExpenseActivity extends AppCompatActivity {
         boolean enabled = Boolean.TRUE.equals(vm.loaded.getValue()) && !Boolean.TRUE.equals(vm.busy.getValue());
         setEnabled(form, enabled);
         if (enabled) bindParticipants();
-        retry.setEnabled(!Boolean.TRUE.equals(vm.busy.getValue()));
+        String loadError = vm.error.getValue();
+        boolean canRetry = !Boolean.TRUE.equals(vm.loaded.getValue())
+                && !Boolean.TRUE.equals(vm.busy.getValue())
+                && loadError != null && !loadError.isEmpty();
+        retry.setVisibility(canRetry ? View.VISIBLE : View.GONE);
+        retry.setEnabled(canRetry);
         save.setEnabled(enabled && Boolean.TRUE.equals(vm.valid.getValue()));
     }
 

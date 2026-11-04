@@ -4,10 +4,16 @@ import android.content.*;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.appcompat.app.*;
 import androidx.lifecycle.*;
+import com.example.splitsmart.R;
 import com.example.splitsmart.SplitSmartApp;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.example.splitsmart.model.*;
 import com.example.splitsmart.ui.common.MoneyFormatter;
 import java.util.*;
@@ -38,7 +44,17 @@ public class ExpenseDetailActivity extends AppCompatActivity {
             @NonNull @Override public <T extends ViewModel> T create(@NonNull Class<T> type) { return type.cast(new ExpenseDetailViewModel(((SplitSmartApp) getApplication()).getExpenseService())); }
         }).get(ExpenseDetailViewModel.class);
         LinearLayout body = new LinearLayout(this); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(24,24,24,24);
-        ScrollView scroll = new ScrollView(this); scroll.addView(body); setContentView(scroll);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_expense_detail);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root), (v, insets) -> {
+            Insets bars = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime());
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            return insets;
+        });
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener(v -> finish());
+        ScrollView scroll = findViewById(R.id.expense_detail_scroll); scroll.addView(body);
         detail = new TextView(this); detail.setTextSize(18); body.addView(detail);
         error = new TextView(this); error.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE); body.addView(error);
         edit = new Button(this); edit.setText("Edit expense"); edit.setVisibility(View.GONE); body.addView(edit);
