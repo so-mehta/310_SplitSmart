@@ -15,6 +15,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -66,10 +67,12 @@ public class SettlementServiceTest {
     @Test
     public void createSettlement_acceptsTheExactAmountOwedAndSavesIt() {
         Settlement settlement = newSettlement(1000);
+        long before = System.currentTimeMillis();
 
         Settlement created = settlementService.createSettlement(BOB, settlement);
 
         assertSame(settlement, created);
+        assertTrue(settlement.getCreatedAtMillis() >= before);
         assertEquals(BOB, settlement.getCreatorId());
         assertEquals(LocalDate.now(), settlement.getDate());
         verify(settlementRepository).save(settlement);

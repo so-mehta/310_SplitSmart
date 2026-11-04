@@ -33,6 +33,7 @@ public class ExpenseService {
     private static final String ERROR_PARTICIPANTS = "Select at least two participants.";
     private static final String ERROR_DUPLICATE_PARTICIPANT = "Each participant can only have one share.";
     private static final String ERROR_PARTICIPANT = "Every participant must be a member of this group.";
+    private static final String ERROR_PAYER_NOT_PARTICIPANT = "The payer must be one of the participants.";
     private static final String ERROR_CATEGORY = "Choose a category.";
     private static final String ERROR_METHOD = "Choose a split method.";
     private static final String ERROR_SHARES = "Shares must add up to the total.";
@@ -66,6 +67,7 @@ public class ExpenseService {
 
         expense.setCreatorId(callerId);
         expense.setDate(LocalDate.now());
+        expense.setCreatedAtMillis(System.currentTimeMillis());
         expenseRepository.save(expense);
         return expense;
     }
@@ -93,6 +95,7 @@ public class ExpenseService {
         expense.setCreatorId(stored.getCreatorId());
         expense.setGroupId(stored.getGroupId());
         expense.setDate(stored.getDate());
+        expense.setCreatedAtMillis(stored.getCreatedAtMillis());
         expenseRepository.update(expense);
     }
 
@@ -203,6 +206,9 @@ public class ExpenseService {
             if (!group.isMember(participantId)) {
                 throw new ValidationException(ERROR_PARTICIPANT);
             }
+        }
+        if (!participantIds.contains(expense.getPayerId())) {
+            throw new ValidationException(ERROR_PAYER_NOT_PARTICIPANT);
         }
     }
 }

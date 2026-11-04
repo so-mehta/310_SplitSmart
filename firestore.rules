@@ -1,9 +1,7 @@
 rules_version = '2';
 
-// SplitSmart Firestore security rules (R11, NFR 5.2.5).
-// Publish by pasting this file into Firebase console > Firestore Database > Rules.
-//
-// Collections (see repository/firebase):
+// SplitSmart Firestore security rules
+// Collections:
 //   users/{userId}             userId = Firebase Auth uid
 //   groups/{groupId}           memberIds array, ownerId
 //   expenses/{expenseId}       groupId, creatorId

@@ -45,7 +45,8 @@ public class HistoryFragment extends Fragment {
         members.clear(); for (int i = 0; i < ids.size(); i++) members.put(ids.get(i), names.get(i));
         vm = new ViewModelProvider(this, new AbstractSavedStateViewModelFactory(this, saved) {
             @NonNull @Override protected <T extends ViewModel> T create(@NonNull String key, @NonNull Class<T> type, @NonNull SavedStateHandle state) {
-                return type.cast(new HistoryViewModel(((SplitSmartApp) requireActivity().getApplication()).getHistoryService(), state));
+                SplitSmartApp app = (SplitSmartApp) requireActivity().getApplication();
+                return type.cast(new HistoryViewModel(app.getHistoryService(), app.getSettlementService(), state));
             }
         }).get(HistoryViewModel.class);
         vm.initialize(groupId);
@@ -128,6 +129,11 @@ public class HistoryFragment extends Fragment {
         vm.rows.observe(getViewLifecycleOwner(), rows -> { transactions.clear(); if (rows != null) transactions.addAll(rows); adapter.notifyDataSetChanged(); renderStatus(); });
         vm.error.observe(getViewLifecycleOwner(), message -> renderStatus());
         vm.busy.observe(getViewLifecycleOwner(), value -> renderStatus());
+        vm.actionMessage.observe(getViewLifecycleOwner(), message -> {
+            if (message == null) return;
+            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+            vm.actionMessage.setValue(null);
+        });
     }
     @Override public void onResume() { super.onResume(); if (vm != null) vm.refresh(); }
     @Override public void onSaveInstanceState(@NonNull Bundle out) { out.putBoolean("filtersVisible", filtersVisible); super.onSaveInstanceState(out); }
@@ -138,14 +144,40 @@ public class HistoryFragment extends Fragment {
     }
     private void showSettlement(Settlement settlement) {
         String note = settlement.getNote();
-        new AlertDialog.Builder(requireContext()).setTitle("Settlement")
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext()).setTitle("Settlement")
                 .setMessage("Paid by: " + name(settlement.getPayerId()) +
                         "\nReceived by: " + name(settlement.getReceiverId()) +
                         "\nAmount: " + MoneyFormatter.format(settlement.getAmountCents()) +
                         "\nDate: " + settlement.getDate() +
                         "\nCreated by: " + name(settlement.getCreatorId()) +
-                        "\nNote: " + (note == null || note.isEmpty() ? "None" : note))
-                .setPositiveButton("Close", null).show();
+                        "\nNote: " + (note == null || note.isEmpty() ? "None" : note));
+        // Only the person who recorded the settlement can edit or delete it (Feature 5).
+        if (userId.equals(settlement.getCreatorId())) {
+            builder.setNeutralButton("Delete", (d, w) -> confirmDeleteSettlement(settlement));
+            builder.setNegativeButton("Edit", (d, w) -> editSettlement(settlement));
+        }
+        builder.setPositiveButton("Close", null).show();
+    }
+    private void confirmDeleteSettlement(Settlement settlement) {
+        new AlertDialog.Builder(requireContext()).setTitle("Delete settlement?")
+                .setMessage("This removes the " + MoneyFormatter.format(settlement.getAmountCents()) +
+                        " payment to " + name(settlement.getReceiverId()) + " and updates balances.")
+                .setPositiveButton("Delete", (d, w) -> vm.deleteSettlement(userId, settlement.getTransactionId()))
+                .setNegativeButton("Cancel", null).show();
+    }
+    private void editSettlement(Settlement settlement) {
+        LinearLayout form = new LinearLayout(requireContext()); form.setOrientation(LinearLayout.VERTICAL); form.setPadding(48, 16, 48, 0);
+        EditText amount = new EditText(requireContext()); amount.setHint("Amount (USD)");
+        amount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        long cents = settlement.getAmountCents();
+        amount.setText(String.format(Locale.US, "%d.%02d", cents / 100, cents % 100)); form.addView(amount);
+        EditText noteInput = new EditText(requireContext()); noteInput.setHint("Note (optional)");
+        noteInput.setText(settlement.getNote() == null ? "" : settlement.getNote()); form.addView(noteInput);
+        new AlertDialog.Builder(requireContext()).setTitle("Edit settlement to " + name(settlement.getReceiverId()))
+                .setView(form)
+                .setPositiveButton("Save", (d, w) -> vm.updateSettlement(userId, settlement,
+                        amount.getText().toString(), noteInput.getText().toString()))
+                .setNegativeButton("Cancel", null).show();
     }
     private void selector(LinearLayout body, String label, String key, List<String> values, List<String> labels) {
         TextView title = new TextView(requireContext()); title.setText(label); body.addView(title);

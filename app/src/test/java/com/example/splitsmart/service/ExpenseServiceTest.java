@@ -24,6 +24,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -60,6 +61,7 @@ public class ExpenseServiceTest {
         stored.setTransactionId(EXPENSE_ID);
         stored.setCreatorId(BOB);
         stored.setDate(ORIGINAL_DATE);
+        stored.setCreatedAtMillis(1234L);
         when(expenseRepository.findById(EXPENSE_ID)).thenReturn(stored);
     }
 
@@ -88,13 +90,25 @@ public class ExpenseServiceTest {
     }
 
     @Test
-    public void createExpense_payerWithNoShare_isAccepted() {
+    public void createExpense_recordsTheCreationTime() {
+        long before = System.currentTimeMillis();
+
+        Expense created = expenseService.createExpense(BOB, newExpense());
+
+        assertTrue(created.getCreatedAtMillis() >= before);
+        assertTrue(created.getCreatedAtMillis() <= System.currentTimeMillis());
+    }
+
+    @Test
+    public void createExpense_payerWithNoShare_isRejected() {
         Expense expense = newExpense();
         expense.setShares(shares(BOB, 500, CAROL, 500));
 
-        expenseService.createExpense(ALICE, expense);
+        ValidationException e = assertThrows(ValidationException.class,
+                () -> expenseService.createExpense(ALICE, expense));
 
-        verify(expenseRepository).save(expense);
+        assertEquals("The payer must be one of the participants.", e.getMessage());
+        verify(expenseRepository, never()).save(any());
     }
 
     @Test
@@ -250,6 +264,7 @@ public class ExpenseServiceTest {
         Expense edited = editedExpense();
         edited.setTitle("Groceries");
         edited.setAmountCents(2000);
+        edited.setPayerId(BOB);
         edited.setShares(shares(BOB, 1000, CAROL, 1000));
 
         expenseService.updateExpense(BOB, edited);
@@ -271,6 +286,7 @@ public class ExpenseServiceTest {
         assertEquals(BOB, edited.getCreatorId());
         assertEquals(ORIGINAL_DATE, edited.getDate());
         assertEquals(GROUP_ID, edited.getGroupId());
+        assertEquals(1234L, edited.getCreatedAtMillis());
     }
 
     @Test

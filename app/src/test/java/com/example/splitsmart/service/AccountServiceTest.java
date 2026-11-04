@@ -14,6 +14,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -83,6 +84,55 @@ public class AccountServiceTest {
         accountService.register(NAME, EMAIL, USC_ID, "123456");
 
         verify(userRepository).save(any());
+    }
+
+    @Test
+    public void register_authReportsEmailTaken_isRejectedWithoutSaving() {
+        when(userRepository.createAuthAccount(EMAIL, PASSWORD)).thenReturn(null);
+
+        ValidationException e = assertThrows(ValidationException.class,
+                () -> accountService.register(NAME, EMAIL, USC_ID, PASSWORD));
+
+        assertEquals("An account with this email already exists.", e.getMessage());
+        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).deleteCurrentAuthAccount();
+    }
+
+    @Test
+    public void register_profileSaveFails_deletesAuthAccountAndRethrows() {
+        when(userRepository.createAuthAccount(EMAIL, PASSWORD)).thenReturn(UID);
+        RuntimeException failure = new RuntimeException("offline");
+        doThrow(failure).when(userRepository).save(any());
+
+        RuntimeException thrown = assertThrows(RuntimeException.class,
+                () -> accountService.register(NAME, EMAIL, USC_ID, PASSWORD));
+
+        assertSame(failure, thrown);
+        verify(userRepository).deleteCurrentAuthAccount();
+    }
+
+    @Test
+    public void register_profileSaveAndCleanupFail_rethrowsSaveFailure() {
+        when(userRepository.createAuthAccount(EMAIL, PASSWORD)).thenReturn(UID);
+        RuntimeException failure = new RuntimeException("offline");
+        RuntimeException cleanupFailure = new RuntimeException("still offline");
+        doThrow(failure).when(userRepository).save(any());
+        doThrow(cleanupFailure).when(userRepository).deleteCurrentAuthAccount();
+
+        RuntimeException thrown = assertThrows(RuntimeException.class,
+                () -> accountService.register(NAME, EMAIL, USC_ID, PASSWORD));
+
+        assertSame(failure, thrown);
+        assertSame(cleanupFailure, thrown.getSuppressed()[0]);
+    }
+
+    @Test
+    public void register_success_keepsAuthAccount() {
+        when(userRepository.createAuthAccount(EMAIL, PASSWORD)).thenReturn(UID);
+
+        accountService.register(NAME, EMAIL, USC_ID, PASSWORD);
+
+        verify(userRepository, never()).deleteCurrentAuthAccount();
     }
 
     @Test

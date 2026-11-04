@@ -67,8 +67,22 @@ public class AccountService {
         }
 
         String userId = userRepository.createAuthAccount(trimmedEmail, password);
+        if (userId == null) {
+            // Another sign-up took this email after the duplicate check above.
+            throw new ValidationException(ERROR_DUPLICATE_EMAIL);
+        }
         User user = new User(userId, trimmedName, trimmedEmail, uscId);
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+        } catch (RuntimeException saveFailure) {
+            // Undo the Auth account so the user can sign up again with the same email.
+            try {
+                userRepository.deleteCurrentAuthAccount();
+            } catch (RuntimeException deleteFailure) {
+                saveFailure.addSuppressed(deleteFailure);
+            }
+            throw saveFailure;
+        }
         return user;
     }
 

@@ -55,6 +55,7 @@ public class SettlementService {
 
         settlement.setCreatorId(callerId);
         settlement.setDate(LocalDate.now());
+        settlement.setCreatedAtMillis(System.currentTimeMillis());
         settlementRepository.save(settlement);
         return settlement;
     }
@@ -83,6 +84,7 @@ public class SettlementService {
         settlement.setGroupId(stored.getGroupId());
         settlement.setCreatorId(stored.getCreatorId());
         settlement.setDate(stored.getDate());
+        settlement.setCreatedAtMillis(stored.getCreatedAtMillis());
         settlement.setPayerId(stored.getPayerId());
         settlement.setReceiverId(stored.getReceiverId());
         settlementRepository.update(settlement);

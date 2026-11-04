@@ -30,6 +30,7 @@ public class FirebaseExpenseRepository implements ExpenseRepository {
     private static final String FIELD_AMOUNT_CENTS = "amountCents";
     private static final String FIELD_DATE = "date";
     private static final String FIELD_NOTE = "note";
+    private static final String FIELD_CREATED_AT = "createdAt";
     private static final String FIELD_TITLE = "title";
     private static final String FIELD_CATEGORY = "category";
     private static final String FIELD_PAYER_ID = "payerId";
@@ -103,6 +104,7 @@ public class FirebaseExpenseRepository implements ExpenseRepository {
         map.put(FIELD_AMOUNT_CENTS, expense.getAmountCents());
         map.put(FIELD_DATE, expense.getDate() != null ? expense.getDate().toString() : null);
         map.put(FIELD_NOTE, expense.getNote());
+        map.put(FIELD_CREATED_AT, expense.getCreatedAtMillis());
         map.put(FIELD_TITLE, expense.getTitle());
         map.put(FIELD_CATEGORY, expense.getCategory() != null ? expense.getCategory().name() : null);
         map.put(FIELD_PAYER_ID, expense.getPayerId());
@@ -134,7 +136,7 @@ public class FirebaseExpenseRepository implements ExpenseRepository {
         String date = doc.getString(FIELD_DATE);
         String category = doc.getString(FIELD_CATEGORY);
         String splitMethod = doc.getString(FIELD_SPLIT_METHOD);
-        return new Expense(
+        Expense expense = new Expense(
                 doc.getId(),
                 doc.getString(FIELD_GROUP_ID),
                 doc.getString(FIELD_CREATOR_ID),
@@ -146,6 +148,8 @@ public class FirebaseExpenseRepository implements ExpenseRepository {
                 doc.getString(FIELD_PAYER_ID),
                 splitMethod != null ? SplitMethod.valueOf(splitMethod) : null,
                 shares);
+        expense.setCreatedAtMillis(toLong(doc.get(FIELD_CREATED_AT)));
+        return expense;
     }
 
     // Firestore returns numbers as Long or Double depending on how they were written.

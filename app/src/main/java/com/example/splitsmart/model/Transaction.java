@@ -10,6 +10,8 @@ public abstract class Transaction {
     private LocalDate date;
     private String note;
 
+    private long createdAtMillis;
+
     public Transaction() {
     }
 
@@ -68,6 +70,14 @@ public abstract class Transaction {
 
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public long getCreatedAtMillis() {
+        return createdAtMillis;
+    }
+
+    public void setCreatedAtMillis(long createdAtMillis) {
+        this.createdAtMillis = createdAtMillis;
     }
 
     public abstract TransactionType getType();

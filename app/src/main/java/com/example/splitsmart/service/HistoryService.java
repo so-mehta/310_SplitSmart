@@ -98,9 +98,16 @@ public class HistoryService {
             byDate = Comparator.comparing(Transaction::getDate,
                     Comparator.nullsLast(Comparator.reverseOrder()));
         }
+        // Same date: order by creation time in the same direction, so the newest
+        // transaction created today comes first. The ID keeps the order stable after that.
+        Comparator<Transaction> byCreatedAt = Comparator.comparingLong(
+                Transaction::getCreatedAtMillis);
+        if (order != SortOrder.OLDEST_FIRST) {
+            byCreatedAt = byCreatedAt.reversed();
+        }
         Comparator<Transaction> byId = Comparator.comparing(Transaction::getTransactionId,
                 Comparator.nullsLast(Comparator.naturalOrder()));
-        return byDate.thenComparing(byId);
+        return byDate.thenComparing(byCreatedAt).thenComparing(byId);
     }
 
     private static boolean isBlank(String value) {

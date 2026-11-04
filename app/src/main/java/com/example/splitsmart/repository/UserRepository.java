@@ -47,9 +47,15 @@ public interface UserRepository {
      *
      * @param email the user's email
      * @param password the user's password
-     * @return the new account's user ID
+     * @return the new account's user ID, or null if an account with this email already exists
      */
     String createAuthAccount(String email, String password);
+
+    /**
+     * Deletes the signed-in Firebase Auth account. Used to undo createAuthAccount when the
+     * profile cannot be saved, so the email is not left with a login but no profile.
+     */
+    void deleteCurrentAuthAccount();
 
     /**
      * Signs in with email and password.

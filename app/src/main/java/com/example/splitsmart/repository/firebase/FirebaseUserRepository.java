@@ -5,6 +5,7 @@ import com.example.splitsmart.repository.UserRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -71,9 +72,27 @@ public class FirebaseUserRepository implements UserRepository {
 
     @Override
     public String createAuthAccount(String email, String password) {
-        return FirebaseTasks.await(auth.createUserWithEmailAndPassword(normalizeEmail(email), password))
-                .getUser()
-                .getUid();
+        try {
+            return FirebaseTasks.awaitOrThrow(
+                            auth.createUserWithEmailAndPassword(normalizeEmail(email), password))
+                    .getUser()
+                    .getUid();
+        } catch (ExecutionException e) {
+            // Email already has an Auth account: report it so the service can show the
+            // Project 2.1 duplicate-email message instead of a generic failure.
+            if (e.getCause() instanceof FirebaseAuthUserCollisionException) {
+                return null;
+            }
+            throw new RuntimeException("Firebase account creation failed", e.getCause());
+        }
+    }
+
+    @Override
+    public void deleteCurrentAuthAccount() {
+        FirebaseUser current = auth.getCurrentUser();
+        if (current != null) {
+            FirebaseTasks.await(current.delete());
+        }
     }
 
     @Override

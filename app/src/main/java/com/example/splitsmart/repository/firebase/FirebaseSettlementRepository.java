@@ -15,7 +15,6 @@ import java.util.Map;
 
 /**
  * SettlementRepository backed by the top-level Firestore "settlements" collection.
- * Each document has a groupId field, so one query loads a whole group's settlements.
  * Dates are stored as YYYY-MM-DD strings and money as long cents.
  */
 public class FirebaseSettlementRepository implements SettlementRepository {
@@ -26,6 +25,7 @@ public class FirebaseSettlementRepository implements SettlementRepository {
     private static final String FIELD_AMOUNT_CENTS = "amountCents";
     private static final String FIELD_DATE = "date";
     private static final String FIELD_NOTE = "note";
+    private static final String FIELD_CREATED_AT = "createdAt";
     private static final String FIELD_PAYER_ID = "payerId";
     private static final String FIELD_RECEIVER_ID = "receiverId";
 
@@ -93,6 +93,7 @@ public class FirebaseSettlementRepository implements SettlementRepository {
         map.put(FIELD_AMOUNT_CENTS, settlement.getAmountCents());
         map.put(FIELD_DATE, settlement.getDate() != null ? settlement.getDate().toString() : null);
         map.put(FIELD_NOTE, settlement.getNote());
+        map.put(FIELD_CREATED_AT, settlement.getCreatedAtMillis());
         map.put(FIELD_PAYER_ID, settlement.getPayerId());
         map.put(FIELD_RECEIVER_ID, settlement.getReceiverId());
         return map;
@@ -101,7 +102,7 @@ public class FirebaseSettlementRepository implements SettlementRepository {
     private static Settlement fromDocument(DocumentSnapshot doc) {
         String date = doc.getString(FIELD_DATE);
         Long amountCents = doc.getLong(FIELD_AMOUNT_CENTS);
-        return new Settlement(
+        Settlement settlement = new Settlement(
                 doc.getId(),
                 doc.getString(FIELD_GROUP_ID),
                 doc.getString(FIELD_CREATOR_ID),
@@ -110,5 +111,8 @@ public class FirebaseSettlementRepository implements SettlementRepository {
                 doc.getString(FIELD_NOTE),
                 doc.getString(FIELD_PAYER_ID),
                 doc.getString(FIELD_RECEIVER_ID));
+        Long createdAt = doc.getLong(FIELD_CREATED_AT);
+        settlement.setCreatedAtMillis(createdAt != null ? createdAt : 0L);
+        return settlement;
     }
 }

@@ -149,6 +149,50 @@ public class HistoryServiceTest {
     }
 
     @Test
+    public void equalDates_newestFirst_putsTheLaterCreatedTransactionFirst() {
+        expenses.clear();
+        settlements.clear();
+        LocalDate date = LocalDate.of(2026, 3, 1);
+        Expense first = expense("transaction-a", date, "First", "", Category.OTHER,
+                ALICE, ALICE, BOB);
+        first.setCreatedAtMillis(1000);
+        Expense second = expense("transaction-b", date, "Second", "", Category.OTHER,
+                ALICE, ALICE, BOB);
+        second.setCreatedAtMillis(2000);
+        Settlement third = settlement("transaction-0", date, "", BOB, ALICE);
+        third.setCreatedAtMillis(3000);
+        expenses.add(first);
+        expenses.add(second);
+        settlements.add(third);
+
+        List<Transaction> history = historyService.getHistory(GROUP_ID, null,
+                SortOrder.NEWEST_FIRST);
+
+        assertEquals(Arrays.asList("transaction-0", "transaction-b", "transaction-a"),
+                ids(history));
+    }
+
+    @Test
+    public void equalDates_oldestFirst_putsTheEarlierCreatedTransactionFirst() {
+        expenses.clear();
+        settlements.clear();
+        LocalDate date = LocalDate.of(2026, 3, 1);
+        Expense first = expense("transaction-b", date, "First", "", Category.OTHER,
+                ALICE, ALICE, BOB);
+        first.setCreatedAtMillis(1000);
+        Expense second = expense("transaction-a", date, "Second", "", Category.OTHER,
+                ALICE, ALICE, BOB);
+        second.setCreatedAtMillis(2000);
+        expenses.add(first);
+        expenses.add(second);
+
+        List<Transaction> history = historyService.getHistory(GROUP_ID, null,
+                SortOrder.OLDEST_FIRST);
+
+        assertEquals(Arrays.asList("transaction-b", "transaction-a"), ids(history));
+    }
+
+    @Test
     public void noMatches_returnsAnEmptyList() {
         List<Transaction> history = historyService.getHistory(GROUP_ID,
                 new HistoryFilter("not present", null, null, null),
