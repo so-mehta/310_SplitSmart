@@ -28,6 +28,8 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+import java.util.LinkedHashMap;
+
 /**
  * Container for one group (SD2): a tab bar with History, Balances, Members and Summary.
  * The activity-scoped {@link GroupDetailViewModel} loads the group and its members once and
@@ -46,6 +48,7 @@ public class GroupDetailActivity extends AppCompatActivity {
 
     private GroupDetailViewModel viewModel;
     private MaterialToolbar toolbar;
+    private TabAdapter tabAdapter;
 
     private final ActivityResultLauncher<Intent> editLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -87,12 +90,13 @@ public class GroupDetailActivity extends AppCompatActivity {
         });
         setOwnerActionsVisible(false);
 
-        ViewPager2 pager = findViewById(R.id.pager);
-        pager.setAdapter(new TabAdapter(this));
-        pager.setOffscreenPageLimit(1);
-        TabLayout tabs = findViewById(R.id.tab_layout);
-        new TabLayoutMediator(tabs, pager, (tab, position) -> tab.setText(tabTitle(position)))
-                .attach();
+        // History and Summary take the member snapshot as arguments, so the tabs are only
+        // created once the members have loaded.
+        viewModel.memberNames.observe(this, names -> {
+            if (names != null) {
+                showTabs(new LinkedHashMap<>(names));
+            }
+        });
 
         viewModel.group.observe(this, group -> {
             if (group == null) {
@@ -124,6 +128,21 @@ public class GroupDetailActivity extends AppCompatActivity {
     /** Shows a service message (or the generic one) to the user. */
     void showError(String message) {
         Snackbar.make(findViewById(R.id.root), message, Snackbar.LENGTH_LONG).show();
+    }
+
+    /** Creates the tabs on the first load, and refreshes History when the members change. */
+    private void showTabs(LinkedHashMap<String, String> memberNames) {
+        if (tabAdapter == null) {
+            tabAdapter = new TabAdapter(this, viewModel.groupId(), viewModel.userId(), memberNames);
+            ViewPager2 pager = findViewById(R.id.pager);
+            pager.setAdapter(tabAdapter);
+            pager.setOffscreenPageLimit(1);
+            TabLayout tabs = findViewById(R.id.tab_layout);
+            new TabLayoutMediator(tabs, pager, (tab, position) -> tab.setText(tabTitle(position)))
+                    .attach();
+        } else {
+            tabAdapter.setMemberNames(memberNames);
+        }
     }
 
     private void setOwnerActionsVisible(boolean visible) {
@@ -166,31 +185,66 @@ public class GroupDetailActivity extends AppCompatActivity {
         }
     }
 
-    /** Tab order: History, Balances, Members, Summary. */
+    /**
+     * Tab order: History, Balances, Members, Summary. History gets a new item id whenever the
+     * members change, so it is recreated with the new names (its Add Expense button lists them).
+     */
     private static class TabAdapter extends FragmentStateAdapter {
 
-        TabAdapter(@NonNull AppCompatActivity activity) {
+        private static final int HISTORY_POSITION = 0;
+
+        private final String groupId;
+        private final String userId;
+        private LinkedHashMap<String, String> memberNames;
+        private long historyVersion;
+
+        TabAdapter(@NonNull AppCompatActivity activity, String groupId, String userId,
+                   LinkedHashMap<String, String> memberNames) {
             super(activity);
+            this.groupId = groupId;
+            this.userId = userId;
+            this.memberNames = memberNames;
+        }
+
+        void setMemberNames(LinkedHashMap<String, String> names) {
+            if (names.equals(memberNames)) {
+                return;
+            }
+            memberNames = names;
+            historyVersion++;
+            notifyItemChanged(HISTORY_POSITION);
         }
 
         @NonNull
         @Override
         public Fragment createFragment(int position) {
             switch (position) {
-                case 0:
-                    return new HistoryFragment();
+                case HISTORY_POSITION:
+                    return HistoryFragment.newInstance(groupId, userId, memberNames);
                 case 1:
                     return new BalanceFragment();
                 case 2:
                     return new MemberListFragment();
                 default:
-                    return new MonthlySummaryFragment();
+                    return MonthlySummaryFragment.newInstance(groupId, userId, memberNames);
             }
         }
 
         @Override
         public int getItemCount() {
             return TAB_COUNT;
+        }
+
+        // Positions 1 to 3 keep their position as id. History's id starts after them.
+        @Override
+        public long getItemId(int position) {
+            return position == HISTORY_POSITION ? TAB_COUNT + historyVersion : position;
+        }
+
+        @Override
+        public boolean containsItem(long itemId) {
+            return itemId == TAB_COUNT + historyVersion
+                    || (itemId > HISTORY_POSITION && itemId < TAB_COUNT);
         }
     }
 }

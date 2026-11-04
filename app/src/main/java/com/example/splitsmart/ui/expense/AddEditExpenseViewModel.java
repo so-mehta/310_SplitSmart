@@ -44,7 +44,9 @@ public class AddEditExpenseViewModel extends ViewModel {
         if (id == null || state.contains("draftReady")) {
             if (id == null) {
                 if (text("category").isEmpty()) state.set("category", Category.OTHER.name());
-                if (text("payer").isEmpty() && !members.isEmpty()) state.set("payer", members.keySet().iterator().next());
+                // Default the payer to the person adding the expense.
+                if (text("payer").isEmpty() && !members.isEmpty())
+                    state.set("payer", members.containsKey(user) ? user : members.keySet().iterator().next());
                 if (!text("payer").isEmpty()) select(text("payer"), true);
             }
             loaded.setValue(true);

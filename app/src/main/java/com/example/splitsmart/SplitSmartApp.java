@@ -14,9 +14,11 @@ import com.example.splitsmart.service.AccountService;
 import com.example.splitsmart.service.BalanceService;
 import com.example.splitsmart.service.ExpenseService;
 import com.example.splitsmart.service.GroupService;
+import com.example.splitsmart.service.HistoryService;
 import com.example.splitsmart.service.InputValidator;
 import com.example.splitsmart.service.SettlementService;
 import com.example.splitsmart.service.SplitCalculator;
+import com.example.splitsmart.service.SummaryService;
 
 /**
  * This is the only class allowed to import both the repository implementations
@@ -29,6 +31,8 @@ public class SplitSmartApp extends Application {
     private ExpenseService expenseService;
     private BalanceService balanceService;
     private SettlementService settlementService;
+    private HistoryService historyService;
+    private SummaryService summaryService;
 
     @Override
     public void onCreate() {
@@ -45,6 +49,8 @@ public class SplitSmartApp extends Application {
         expenseService = new ExpenseService(new SplitCalculator(), expenseRepository, groupRepository);
         balanceService = new BalanceService(expenseRepository, settlementRepository);
         settlementService = new SettlementService(balanceService, settlementRepository);
+        historyService = new HistoryService(expenseRepository, settlementRepository);
+        summaryService = new SummaryService(expenseRepository);
     }
 
     public AccountService getAccountService() {
@@ -65,5 +71,13 @@ public class SplitSmartApp extends Application {
 
     public SettlementService getSettlementService() {
         return settlementService;
+    }
+
+    public HistoryService getHistoryService() {
+        return historyService;
+    }
+
+    public SummaryService getSummaryService() {
+        return summaryService;
     }
 }
