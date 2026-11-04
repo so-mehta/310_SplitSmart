@@ -135,6 +135,10 @@ public class AddEditExpenseActivity extends AppCompatActivity {
             new AlertDialog.Builder(this).setMessage("Please wait for the current operation to finish.").setPositiveButton("OK", null).show();
             return;
         }
+        if (!vm.hasUnsavedChanges()) {
+            finish();
+            return;
+        }
         new AlertDialog.Builder(this).setTitle("Leave expense form?")
                 .setMessage("Your unsaved changes will be discarded.")
                 .setNegativeButton("Keep editing", null).setPositiveButton("Discard", (dialog, which) -> finish()).show();

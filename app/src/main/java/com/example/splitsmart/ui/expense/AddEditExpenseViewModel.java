@@ -48,6 +48,7 @@ public class AddEditExpenseViewModel extends ViewModel {
                 if (text("payer").isEmpty() && !members.isEmpty())
                     state.set("payer", members.containsKey(user) ? user : members.keySet().iterator().next());
                 if (!text("payer").isEmpty()) select(text("payer"), true);
+                if (!state.contains("originalDraft")) state.set("originalDraft", draftSnapshot());
             }
             loaded.setValue(true);
             refreshPreview();
@@ -89,6 +90,24 @@ public class AddEditExpenseViewModel extends ViewModel {
     public String input(String id) { return text(method().name() + ":" + id); }
     public void input(String id, String value) { setText(method().name() + ":" + id, value); }
 
+    public boolean hasUnsavedChanges() {
+        ArrayList<String> original = state.get("originalDraft");
+        return original != null && !original.equals(draftSnapshot());
+    }
+
+    private ArrayList<String> draftSnapshot() {
+        ArrayList<String> snapshot = new ArrayList<>(Arrays.asList(
+                text("title"), text("amount"), text("category"), text("payer"),
+                text("note"), method().name()));
+        ArrayList<String> selected = participants();
+        Collections.sort(selected);
+        for (String id : selected) {
+            snapshot.add(id);
+            if (method() != SplitMethod.EQUAL) snapshot.add(input(id));
+        }
+        return snapshot;
+    }
+
     public void load() {
         if (loading || Boolean.TRUE.equals(busy.getValue())) return;
         loading = true; busy.setValue(true); error.setValue(null);
@@ -120,6 +139,7 @@ public class AddEditExpenseViewModel extends ViewModel {
             state.set(SplitMethod.PERCENTAGE.name() + ":" + s.getUserId(), BigDecimal.valueOf(s.getPercent()).stripTrailingZeros().toPlainString());
         }
         state.set("draftReady", true);
+        state.set("originalDraft", draftSnapshot());
         loaded.setValue(true);
         refreshPreview();
     }
