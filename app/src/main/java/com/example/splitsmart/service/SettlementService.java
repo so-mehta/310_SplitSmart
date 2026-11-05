@@ -21,7 +21,7 @@ public class SettlementService {
     private static final String ERROR_PAYER = "Choose a payer.";
     private static final String ERROR_RECEIVER = "Choose a receiver.";
     private static final String ERROR_SAME_MEMBER = "Payer and receiver must be different.";
-    private static final String ERROR_AMOUNT = "Amount must be greater than 0.";
+    private static final String ERROR_AMOUNT = "Amount must be greater than zero.";
     private static final String ERROR_NOT_PAYER = "You can only record a settlement you paid.";
     private static final String ERROR_NOT_CREATOR =
             "Only the person who created this settlement can change it.";

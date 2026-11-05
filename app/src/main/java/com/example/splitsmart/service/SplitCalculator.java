@@ -18,10 +18,9 @@ public class SplitCalculator {
     private static final int MIN_PARTICIPANTS = 2;
     private static final long HUNDREDTHS_IN_100_PERCENT = 10000;
 
-    // TODO(Q2): replace with exact Project 2.1 text
-    private static final String ERROR_AMOUNT = "Amount must be greater than 0.";
+    private static final String ERROR_AMOUNT = "Amount must be greater than zero.";
     private static final String ERROR_METHOD = "Choose a split method.";
-    private static final String ERROR_PARTICIPANTS = "Choose at least 2 participants.";
+    private static final String ERROR_PARTICIPANTS = "Select at least two participants.";
     private static final String ERROR_DUPLICATE_PARTICIPANT = "Each participant can only be chosen once.";
     private static final String ERROR_EXACT_INPUT = "Enter an amount for each participant.";
     private static final String ERROR_EXACT_SUM = "Amounts must add up to the total.";

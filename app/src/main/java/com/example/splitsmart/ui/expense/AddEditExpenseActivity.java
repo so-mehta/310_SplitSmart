@@ -13,12 +13,15 @@ import androidx.lifecycle.*;
 import androidx.savedstate.SavedStateRegistryOwner;
 import com.example.splitsmart.SplitSmartApp;
 import com.example.splitsmart.model.*;
+import com.example.splitsmart.ui.group.GroupDetailActivity;
 import java.util.*;
 
 /** Native Android form. GroupDetail supplies member IDs/names; this screen never fetches users. */
 public class AddEditExpenseActivity extends AppCompatActivity {
-    public static final String GROUP_ID = "groupId", USER_ID = "userId", EXPENSE_ID = "expenseId";
-    public static final String MEMBER_IDS = "memberIds", MEMBER_NAMES = "memberNames";
+    // Same keys as the group screen (K12), so every screen reads one set of extras.
+    public static final String GROUP_ID = GroupDetailActivity.EXTRA_GROUP_ID, USER_ID = GroupDetailActivity.EXTRA_USER_ID;
+    public static final String MEMBER_IDS = GroupDetailActivity.EXTRA_MEMBER_IDS, MEMBER_NAMES = GroupDetailActivity.EXTRA_MEMBER_NAMES;
+    public static final String EXPENSE_ID = "com.example.splitsmart.extra.EXPENSE_ID";
     private AddEditExpenseViewModel vm;
     private final LinkedHashMap<String, String> members = new LinkedHashMap<>();
     private LinearLayout form, splits;
@@ -108,7 +111,6 @@ public class AddEditExpenseActivity extends AppCompatActivity {
         binding = true;
         title.setText(vm.text("title")); amount.setText(vm.text("amount")); note.setText(vm.text("note"));
         if (vm.text("category").isEmpty()) vm.setText("category", Category.OTHER.name());
-        if (vm.text("payer").isEmpty() && !members.isEmpty()) vm.setText("payer", members.keySet().iterator().next());
         if (!vm.text("payer").isEmpty()) vm.select(vm.text("payer"), true);
         category.setSelection(Category.valueOf(vm.text("category")).ordinal());
         int index = new ArrayList<>(members.keySet()).indexOf(vm.text("payer"));

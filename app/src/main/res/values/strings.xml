@@ -40,7 +40,6 @@
     <string name="menu_profile">Profile</string>
     <string name="confirm_delete_group_title">Delete this group?</string>
     <string name="confirm_delete_group_message">All of its expenses and settlements will be deleted too. This cannot be undone.</string>
-    <string name="owner_suffix">%1$s (owner)</string>
     <string name="group_meta_owner">%1$s · You are the owner</string>
     <plurals name="member_count">
         <item quantity="one">%d member</item>
@@ -58,9 +57,10 @@
     <string name="label_you_are_owed">You are owed</string>
     <string name="balance_you_owe">You owe %1$s %2$s</string>
     <string name="balance_owes_you">%1$s owes you %2$s</string>
+    <string name="balance_settled">Settled with %1$s</string>
     <string name="settled_up">Settled up</string>
     <string name="action_record_settlement">Record settlement</string>
-    <string name="unknown_member">Former member</string>
+    <string name="unknown_member">Unknown member</string>
 
     <!-- Record settlement (SD6) -->
     <string name="title_record_settlement">Record settlement</string>
@@ -70,10 +70,6 @@
     <string name="nothing_owed">You do not owe anyone</string>
     <string name="owed_option">%1$s (you owe %2$s)</string>
 
-    <!-- Screens owned by Christine (empty skeletons) -->
-    <string name="title_add_expense">Add expense</string>
+    <!-- Expense screens -->
     <string name="title_expense_detail">Expense</string>
-    <string name="placeholder_expense_screen">Expense screen (Christine)</string>
-    <string name="placeholder_history">History (Christine)</string>
-    <string name="placeholder_summary">Monthly summary (Christine)</string>
 </resources>

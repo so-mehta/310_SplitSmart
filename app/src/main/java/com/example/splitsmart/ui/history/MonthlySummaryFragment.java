@@ -20,8 +20,9 @@ public class MonthlySummaryFragment extends Fragment {
     private Button month;
     private TextView total, categories, status;
 
-    public static MonthlySummaryFragment newInstance(String group, String user, LinkedHashMap<String, String> names) {
-        MonthlySummaryFragment fragment = new MonthlySummaryFragment(); fragment.setArguments(HistoryFragment.arguments(group, user, names)); return fragment;
+    public static MonthlySummaryFragment newInstance(String group) {
+        Bundle args = new Bundle(); args.putString(AddEditExpenseActivity.GROUP_ID, group);
+        MonthlySummaryFragment fragment = new MonthlySummaryFragment(); fragment.setArguments(args); return fragment;
     }
     @Override public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup parent, Bundle saved) {
         String group = requireArguments().getString(AddEditExpenseActivity.GROUP_ID);

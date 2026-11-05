@@ -77,7 +77,7 @@ public class ExpenseDetailActivity extends AppCompatActivity {
     }
     @Override protected void onSaveInstanceState(Bundle out) { out.putBoolean("changed", changed); super.onSaveInstanceState(out); }
 
-    private String name(String id) { return members.containsKey(id) ? members.get(id) : "Unknown member"; }
+    private String name(String id) { return members.containsKey(id) ? members.get(id) : getString(R.string.unknown_member); }
     private void render(Expense e) {
         boolean owner = e != null && userId.equals(e.getCreatorId());
         edit.setVisibility(owner ? View.VISIBLE : View.GONE); delete.setVisibility(owner ? View.VISIBLE : View.GONE);

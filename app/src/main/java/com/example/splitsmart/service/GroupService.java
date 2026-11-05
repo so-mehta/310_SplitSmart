@@ -18,7 +18,6 @@ import java.util.List;
  */
 public class GroupService {
 
-    // TODO(Q2): replace with exact Project 2.1 text
     private static final String ERROR_NAME = "Enter a group name.";
     private static final String ERROR_NO_GROUP = "This group no longer exists.";
     private static final String ERROR_NOT_OWNER = "Only the group owner can do this.";
