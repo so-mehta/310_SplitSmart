@@ -174,6 +174,63 @@ public class BalanceServiceTest {
         assertEquals(0, summary.getIndividualBalances().size());
     }
 
+    @Test
+    public void christine_samePairExpensesAccumulateAndOffset() {
+        expenses.add(expense("dinner", BOB, share(BOB, 1000), share(ALICE, 1000)));
+        expenses.add(expense("parking", BOB, share(BOB, 500), share(ALICE, 500)));
+        expenses.add(expense("coffee", ALICE, share(ALICE, 400), share(BOB, 400)));
+
+        assertEquals(-1100, balanceService.getIndividualBalance(GROUP_ID, ALICE, BOB));
+        assertEquals(1100, balanceService.getIndividualBalance(GROUP_ID, BOB, ALICE));
+    }
+
+    @Test
+    public void christine_chainOfDebtsDoesNotCreateThirdDebt() {
+        expenses.add(expense("dinner", BOB, share(BOB, 1000), share(ALICE, 1000)));
+        expenses.add(expense("ride", CAROL, share(CAROL, 1000), share(BOB, 1000)));
+
+        BalanceSummary summary = balanceService.getBalanceSummary(GROUP_ID, BOB);
+        assertEquals(1000, summary.getTotalToPayCents());
+        assertEquals(1000, summary.getTotalToReceiveCents());
+        assertEquals(0, balanceService.getIndividualBalance(GROUP_ID, ALICE, CAROL));
+    }
+
+    @Test
+    public void christine_settlementEditAndDeletionRecomputeBalance() {
+        expenses.add(expense("dinner", BOB, share(BOB, 1100), share(ALICE, 1100)));
+        settlements.add(settlement("payment", ALICE, BOB, 500));
+        assertEquals(-600, balanceService.getIndividualBalance(GROUP_ID, ALICE, BOB));
+
+        settlements.set(0, settlement("payment", ALICE, BOB, 800));
+        assertEquals(-300, balanceService.getIndividualBalance(GROUP_ID, ALICE, BOB));
+
+        settlements.clear();
+        assertEquals(-1100, balanceService.getIndividualBalance(GROUP_ID, ALICE, BOB));
+    }
+
+    @Test
+    public void christine_editAfterFullSettlementReopensDebt() {
+        expenses.add(expense("dinner", BOB, share(BOB, 1000), share(ALICE, 1000)));
+        settlements.add(settlement("payment", ALICE, BOB, 1000));
+        assertEquals(0, balanceService.getIndividualBalance(GROUP_ID, ALICE, BOB));
+
+        expenses.set(0, expense("dinner", BOB, share(BOB, 1200), share(ALICE, 1200)));
+        assertEquals(-200, balanceService.getIndividualBalance(GROUP_ID, ALICE, BOB));
+    }
+
+    @Test
+    public void christine_deletingExpenseAfterPaymentReversesBalance() {
+        expenses.add(expense("dinner", BOB, share(BOB, 1000), share(ALICE, 1000)));
+        settlements.add(settlement("payment", ALICE, BOB, 1000));
+        assertEquals(0, balanceService.getIndividualBalance(GROUP_ID, ALICE, BOB));
+
+        expenses.clear();
+        BalanceSummary summary = balanceService.getBalanceSummary(GROUP_ID, ALICE);
+        assertEquals(0, summary.getTotalToPayCents());
+        assertEquals(1000, summary.getTotalToReceiveCents());
+        assertEquals(1000, balanceService.getIndividualBalance(GROUP_ID, ALICE, BOB));
+    }
+
     private static Expense expense(String id, String payerId, Share... shares) {
         long amountCents = 0;
         for (Share share : shares) {
