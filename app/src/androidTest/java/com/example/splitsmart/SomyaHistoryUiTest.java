@@ -26,7 +26,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
-/** Somya Mehta: five requirements-based Espresso cases. Assertions inspect rendered UI only. */
+/** Somya Mehta: eight requirements-based Espresso cases. Assertions inspect rendered UI only. */
 @RunWith(AndroidJUnit4.class)
 public class SomyaHistoryUiTest {
     private ActivityScenario<GroupDetailActivity> scenario;
@@ -102,23 +102,223 @@ public class SomyaHistoryUiTest {
         assertEmptySummary();
     }
 
+    @Test public void detailsAndRemainingFilters_showCompleteTransactionsAndRestrictOtherCreators() {
+        // This keyword exists only in Rent's note, never its title.
+        search("  LEASE renewal  ");
+        assertRows(rent());
+        onView(withText(rent())).perform(click());
+        awaitDisplayedText("Rent\n$1,200.00\nCategory: HOUSING\nPaid by: Somya\nCreated by: Somya\nDate: "
+                + month.atEndOfMonth() + "\nSplit: EQUAL\nNote: lease renewal\n\nShares\nSomya: $600.00\nAlex: $600.00\n");
+        onView(withText("Edit expense")).check(matches(isDisplayed()));
+        onView(withText("Delete expense")).check(matches(isDisplayed()));
+        androidx.test.espresso.Espresso.pressBack();
+        assertRows(rent());
+        search("");
+        assertRows(uber(), rent(), payment(), lunch(), pizza(), stay());
+        filters(); choose("All categories", "HOUSING"); hideFilters();
+        assertRows(rent(), stay());
+        filters(); choose("HOUSING", "TRANSPORTATION"); hideFilters();
+        assertRows(uber());
+        clearFilters();
+        filters(); choose("All members", "Christine"); hideFilters();
+        assertRows(lunch());
+        clearFilters();
+        filters(); choose("All transactions", "Settlements"); hideFilters();
+        assertRows(payment());
+        onView(withText(payment())).perform(click());
+        onView(withText("Paid by: Alex\nReceived by: Somya\nAmount: $7.00\nDate: " + month.atDay(15)
+                + "\nCreated by: Alex\nNote: pizza refund")).check(matches(isDisplayed()));
+        // Somya can inspect Alex's settlement but cannot change it through the UI.
+        onView(withText("Edit")).check(androidx.test.espresso.assertion.ViewAssertions.doesNotExist());
+        onView(withText("Delete")).check(androidx.test.espresso.assertion.ViewAssertions.doesNotExist());
+        onView(withText("Close")).perform(click());
+        assertRows(payment());
+    }
+
+    @Test public void expenseLifecycle_refreshesHistoryBalancesAndMonthlyCategoryTotals() {
+        onView(withText("Add expense")).perform(click());
+        await(() -> onView(withHint("Dinner, groceries, rent...")).check(matches(isEnabled())));
+        onView(withHint("Dinner, groceries, rent...")).perform(replaceText("Museum"), closeSoftKeyboard());
+        onView(withHint("0.00")).perform(replaceText("20.00"), closeSoftKeyboard());
+        chooseInForm("OTHER", "ENTERTAINMENT");
+        onView(allOf(withText("Alex"), isAssignableFrom(android.widget.CheckBox.class))).perform(scrollTo(), click());
+        onView(withHint("Add a note")).perform(scrollTo(), replaceText("gallery tickets"), closeSoftKeyboard());
+        await(() -> onView(withText("Save expense")).perform(scrollTo()).check(matches(isEnabled())));
+        onView(withText("Save expense")).perform(click());
+        awaitDisplayedText("Group history");
+        search("gallery tickets");
+        String created = "Expense: Museum\nSomya paid $20.00\nInvolved: Somya, Alex\n" + java.time.LocalDate.now();
+        assertRows(created);
+        assertCurrentSummary("4 expenses\n$1,260.00", "20.00", "0.00");
+        assertBalanceWithAlex("Alex owes you $560.50");
+        tab("History"); assertRows(created);
+        onView(withText(created)).perform(click());
+        awaitDisplayedText("Museum\n$20.00\nCategory: ENTERTAINMENT\nPaid by: Somya\nCreated by: Somya\nDate: "
+                + java.time.LocalDate.now() + "\nSplit: EQUAL\nNote: gallery tickets\n\nShares\nSomya: $10.00\nAlex: $10.00\n");
+        onView(withText("Edit expense")).perform(scrollTo(), click());
+        await(() -> onView(withHint("0.00")).check(matches(withText("20.00"))));
+        onView(withHint("0.00")).perform(replaceText("24.00"), closeSoftKeyboard());
+        chooseInForm("ENTERTAINMENT", "OTHER");
+        onView(withHint("Add a note")).perform(scrollTo(), replaceText("gallery tickets updated"), closeSoftKeyboard());
+        await(() -> onView(withText("Save expense")).perform(scrollTo()).check(matches(isEnabled())));
+        onView(withText("Save expense")).perform(click());
+        awaitDisplayedText("Museum\n$24.00\nCategory: OTHER\nPaid by: Somya\nCreated by: Somya\nDate: "
+                + java.time.LocalDate.now() + "\nSplit: EQUAL\nNote: gallery tickets updated\n\nShares\nSomya: $12.00\nAlex: $12.00\n");
+        androidx.test.espresso.Espresso.pressBack();
+        String edited = "Expense: Museum\nSomya paid $24.00\nInvolved: Somya, Alex\n" + java.time.LocalDate.now();
+        assertRows(edited);
+        assertCurrentSummary("4 expenses\n$1,264.00", "0.00", "24.00");
+        assertBalanceWithAlex("Alex owes you $562.50");
+        tab("History"); assertRows(edited);
+        onView(withText(edited)).perform(click());
+        await(() -> onView(withText("Delete expense")).check(matches(isEnabled())));
+        onView(withText("Delete expense")).perform(scrollTo(), click());
+        onView(withText("Are you sure you want to delete this expense?")).check(matches(isDisplayed()));
+        onView(withText("Cancel")).perform(click());
+        androidx.test.espresso.Espresso.pressBack();
+        assertRows(edited); // Cancel must leave the transaction intact.
+        onView(withText(edited)).perform(click());
+        await(() -> onView(withText("Delete expense")).check(matches(isEnabled())));
+        onView(withText("Delete expense")).perform(scrollTo(), click());
+        onView(withText("Delete")).perform(click());
+        awaitDisplayedText("No transactions found"); assertRows();
+        assertCurrentSummary("3 expenses\n$1,240.00", "0.00", "0.00");
+        assertBalanceWithAlex("Alex owes you $550.50");
+        tab("History"); search("");
+        assertRows(uber(), rent(), payment(), lunch(), pizza(), stay());
+    }
+
+    @Test public void settlementLifecycle_validatesDebtLimitAndRefreshesHistoryAndBalances() {
+        tab("Balances");
+        awaitDisplayedText("You owe Christine $5.00");
+        openSettlementForm();
+        await(() -> onView(withId(R.id.spinner_receiver)).check(matches(withSpinnerText("Christine (you owe $5.00)"))));
+        settlementAmount("0.00");
+        awaitDisplayedText("Amount must be greater than zero.");
+        settlementAmount("-1.00");
+        awaitDisplayedText("Enter a non-negative amount with at most two decimal places.");
+        settlementAmount("5.01");
+        awaitDisplayedText("Settlement amount cannot be more than the amount owed.");
+        // Rejected submissions must not change history or balances.
+        androidx.test.espresso.Espresso.pressBack();
+        awaitDisplayedText("You owe Christine $5.00");
+        tab("History"); assertRows(uber(), rent(), payment(), lunch(), pizza(), stay());
+        tab("Balances"); openSettlementForm();
+        await(() -> onView(withId(R.id.et_amount)).check(matches(isDisplayed())));
+        onView(withId(R.id.et_note)).perform(scrollTo(), replaceText("book repayment"), closeSoftKeyboard());
+        settlementAmount("5.00"); // Exactly the current debt is allowed.
+        awaitDisplayedText("Settled with Christine");
+        tab("History"); search("book repayment");
+        String created = ownPayment("5.00"); assertRows(created);
+        assertCurrentSummary("3 expenses\n$1,240.00", "0.00", "0.00");
+        tab("History"); assertRows(created);
+        openHistoryRow(created);
+        assertOwnSettlementDetail("5.00", "book repayment");
+        onView(withText("Edit")).perform(click());
+        onView(withHint("Amount (USD)")).perform(replaceText("3.25"), closeSoftKeyboard());
+        onView(withHint("Note (optional)")).perform(replaceText("book repayment updated"), closeSoftKeyboard());
+        onView(withText("Save")).perform(click());
+        String edited = ownPayment("3.25"); assertRows(edited);
+        tab("Balances"); awaitDisplayedText("You owe Christine $1.75");
+        assertCurrentSummary("3 expenses\n$1,240.00", "0.00", "0.00");
+        tab("History"); assertRows(edited);
+        openHistoryRow(edited);
+        assertOwnSettlementDetail("3.25", "book repayment updated");
+        onView(withText("Delete")).perform(click());
+        onView(withText("Delete settlement?")).check(matches(isDisplayed()));
+        onView(withText("Cancel")).perform(click());
+        assertRows(edited);
+        tab("Balances"); awaitDisplayedText("You owe Christine $1.75");
+        tab("History"); assertRows(edited);
+        openHistoryRow(edited);
+        onView(withText("Delete")).perform(click());
+        onView(withText("Delete settlement?")).check(matches(isDisplayed()));
+        onView(withText("Delete")).perform(click());
+        awaitDisplayedText("No transactions found"); assertRows();
+        tab("Balances"); awaitDisplayedText("You owe Christine $5.00");
+        assertCurrentSummary("3 expenses\n$1,240.00", "0.00", "0.00");
+        tab("History"); search("");
+        assertRows(uber(), rent(), payment(), lunch(), pizza(), stay());
+    }
+
+    private void search(String keyword) {
+        onView(withHint("Search titles and notes")).perform(replaceText(keyword), closeSoftKeyboard());
+    }
+    private void hideFilters() { onView(withText("Hide filters")).perform(click()); }
+    private void clearFilters() {
+        filters(); onView(withText("Clear search and filters")).perform(click()); hideFilters();
+        assertRows(uber(), rent(), payment(), lunch(), pizza(), stay());
+    }
+    private void chooseInForm(String current, String value) {
+        onView(withSpinnerText(current)).perform(scrollTo(), click());
+        onData(allOf(is(instanceOf(String.class)), is(value))).perform(click());
+    }
+    private void assertCurrentSummary(String totals, String entertainment, String other) {
+        summaryTab();
+        assertSummary(totals, "FOOD: $40.00\nHOUSING: $1,200.00\nTRANSPORTATION: $0.00\nENTERTAINMENT: $"
+                + entertainment + "\nOTHER: $" + other + "\n");
+    }
+    private void assertBalanceWithAlex(String expected) {
+        tab("Balances"); awaitDisplayedText(expected);
+    }
+    private void openHistoryRow(String text) {
+        // A reload can rebind this row between touch-down and touch-up. Use the row's
+        // public accessibility click, as with the tabs, after its loading label clears.
+        await(() -> onView(allOf(withText("Loading..."), isDisplayed()))
+                .check(androidx.test.espresso.assertion.ViewAssertions.doesNotExist()));
+        onView(withText(text)).perform(new ViewAction() {
+            public Matcher<View> getConstraints() { return allOf(isDisplayed(), isClickable()); }
+            public String getDescription() { return "Open the rendered transaction through its accessible click action"; }
+            public void perform(UiController ui, View view) {
+                assertTrue("Transaction row must accept its public accessibility click action",
+                        view.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK, null));
+                ui.loopMainThreadUntilIdle();
+            }
+        });
+    }
+    private void openSettlementForm() {
+        await(() -> onView(withId(R.id.btn_record_settlement)).check(matches(isCompletelyDisplayed())));
+        onView(withId(R.id.btn_record_settlement)).perform(click());
+    }
+    private void settlementAmount(String amount) {
+        onView(withId(R.id.et_amount)).perform(scrollTo(), replaceText(amount), closeSoftKeyboard());
+        await(() -> onView(withId(R.id.btn_save)).perform(scrollTo()).check(matches(isEnabled())));
+        onView(withId(R.id.btn_save)).perform(click());
+    }
+    private String ownPayment(String amount) {
+        return "Settlement: Somya paid Christine $" + amount + "\n" + java.time.LocalDate.now();
+    }
+    private void assertOwnSettlementDetail(String amount, String note) {
+        awaitDisplayedText("Paid by: Somya\nReceived by: Christine\nAmount: $" + amount + "\nDate: "
+                + java.time.LocalDate.now() + "\nCreated by: Somya\nNote: " + note);
+    }
+
     private void filters() { onView(withText("Show filters")).perform(click()); }
     private void choose(String current, String value) {
         onView(allOf(withSpinnerText(current), isDisplayed())).perform(click());
         onData(allOf(is(instanceOf(String.class)), is(value))).perform(click());
     }
     private void summaryTab() {
-        onView(allOf(withContentDescription("Summary"), isDisplayed())).perform(new ViewAction() {
+        tab("Summary");
+        awaitDisplayedText("Monthly summary");
+        assertMonth(month);
+    }
+    private void tab(String label) {
+        onView(allOf(withContentDescription(label), isDisplayed())).perform(new ViewAction() {
             public Matcher<View> getConstraints() { return allOf(isDisplayed(), isClickable()); }
-            public String getDescription() { return "Activate the Summary tab using its accessible click action"; }
+            public String getDescription() { return "Activate the " + label + " tab using its accessible click action"; }
             public void perform(UiController ui, View view) {
-                assertTrue("Summary must accept its public accessibility click action",
+                assertTrue("Tab must accept its public accessibility click action",
                         view.performAccessibilityAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK, null));
                 ui.loopMainThreadUntilIdle();
             }
         });
-        awaitDisplayedText("Monthly summary");
-        assertMonth(month);
+        await(() -> onView(withId(R.id.pager)).check((view, missing) -> {
+            if (missing != null) throw missing;
+            assertEquals("Finish the visible tab transition before interacting with its contents",
+                    androidx.viewpager2.widget.ViewPager2.SCROLL_STATE_IDLE,
+                    ((androidx.viewpager2.widget.ViewPager2) view).getScrollState());
+        }));
     }
     private void assertMonth(YearMonth expected) {
         String label = expected.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.US));
