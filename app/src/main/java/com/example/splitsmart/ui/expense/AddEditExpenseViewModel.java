@@ -95,9 +95,8 @@ public class AddEditExpenseViewModel extends ViewModel {
         io.execute(() -> {
             try {
                 Expense expense = service.getExpense(expenseId);
-                if (expense == null) throw new ValidationException("Expense does not exist.");
                 if (!groupId.equals(expense.getGroupId()) || !userId.equals(expense.getCreatorId()))
-                    throw new PermissionException("You cannot edit this expense.");
+                    throw new PermissionException("Only the person who created this expense can change it.");
                 // Publish the model; apply it on the main thread through the Activity observer.
                 expenseToLoad.postValue(expense);
             } catch (ValidationException | PermissionException e) { error.postValue(e.getMessage()); }

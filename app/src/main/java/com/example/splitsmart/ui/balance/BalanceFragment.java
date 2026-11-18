@@ -1,6 +1,7 @@
 package com.example.splitsmart.ui.balance;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,14 +25,15 @@ import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Balances tab (SD5). Shows "You owe" and "You are owed" totals, then one line per member such
- * as "You owe Bob $11.00". Members at $0.00 are hidden, and "Settled up" shows when nobody is
- * left. Names come from the shared {@link GroupDetailViewModel} (K12). When the group cannot be
- * read (the user is not a member) the message is shown instead.
+ * as "You owe Bob $11.00", or "Settled with Bob" at $0.00. "Settled up" shows only when the
+ * user is the group's only member. Names come from the shared {@link GroupDetailViewModel}
+ * (K12). When the group cannot be read (the user is not a member) the message is shown instead.
  */
 public class BalanceFragment extends Fragment {
 
@@ -137,23 +139,35 @@ public class BalanceFragment extends Fragment {
         totalOweView.setText(MoneyFormatter.format(summary.getTotalToPayCents()));
         totalOwedView.setText(MoneyFormatter.format(summary.getTotalToReceiveCents()));
 
-        List<Line> lines = new ArrayList<>();
-        for (Map.Entry<String, Long> entry : summary.getIndividualBalances().entrySet()) {
-            long cents = entry.getValue();
-            if (cents == 0) {
-                continue; // hide members at $0.00
+        // One line per other member (FR 4.2), including members at $0.00. The summary only has
+        // entries for members who share a transaction with the user, so the rest default to 0.
+        Map<String, Long> balances = new LinkedHashMap<>();
+        for (String memberId : names.keySet()) {
+            if (!memberId.equals(shared.userId())) {
+                balances.put(memberId, 0L);
             }
+        }
+        balances.putAll(summary.getIndividualBalances());
+
+        List<Line> lines = new ArrayList<>();
+        for (Map.Entry<String, Long> entry : balances.entrySet()) {
+            long cents = entry.getValue();
             String name = names.get(entry.getKey());
             if (name == null) {
+                if (cents == 0) {
+                    continue; // not a member and nothing owed: nothing to show
+                }
                 name = getString(R.string.unknown_member);
             }
             String money = MoneyFormatter.format(Math.abs(cents));
             if (cents > 0) {
                 lines.add(new Line(name, getString(R.string.balance_owes_you, name, money),
                         ContextCompat.getColor(requireContext(), R.color.owed)));
-            } else {
+            } else if (cents < 0) {
                 lines.add(new Line(name, getString(R.string.balance_you_owe, name, money),
                         ContextCompat.getColor(requireContext(), R.color.owe)));
+            } else {
+                lines.add(new Line(name, getString(R.string.balance_settled, name), null));
             }
         }
         Collections.sort(lines, (a, b) -> a.name.compareToIgnoreCase(b.name));
@@ -161,13 +175,13 @@ public class BalanceFragment extends Fragment {
         settledUpView.setVisibility(lines.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
-    /** One display line: the member's name (for sorting), the text and its color. */
+    /** One display line: the member's name (for sorting), the text and its color (null = default). */
     private static class Line {
         final String name;
         final String text;
-        final int color;
+        final Integer color;
 
-        Line(String name, String text, int color) {
+        Line(String name, String text, Integer color) {
             this.name = name;
             this.text = text;
             this.color = color;
@@ -196,7 +210,11 @@ public class BalanceFragment extends Fragment {
         public void onBindViewHolder(@NonNull Holder holder, int position) {
             Line line = items.get(position);
             holder.text.setText(line.text);
-            holder.text.setTextColor(line.color);
+            if (line.color != null) {
+                holder.text.setTextColor(line.color);
+            } else {
+                holder.text.setTextColor(holder.defaultColors);
+            }
         }
 
         @Override
@@ -206,10 +224,12 @@ public class BalanceFragment extends Fragment {
 
         static class Holder extends RecyclerView.ViewHolder {
             final TextView text;
+            final ColorStateList defaultColors;
 
             Holder(@NonNull View itemView) {
                 super(itemView);
                 text = itemView.findViewById(R.id.tv_balance_line);
+                defaultColors = text.getTextColors();
             }
         }
     }

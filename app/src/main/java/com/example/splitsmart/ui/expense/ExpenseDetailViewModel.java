@@ -25,7 +25,6 @@ public class ExpenseDetailViewModel extends ViewModel {
         io.execute(() -> {
             try {
                 Expense e = service.getExpense(id);
-                if (e == null) throw new ValidationException("Expense does not exist.");
                 if (!groupId.equals(e.getGroupId())) throw new PermissionException("This expense belongs to another group.");
                 expense.postValue(e);
             } catch (ValidationException | PermissionException e) { expense.postValue(null); error.postValue(e.getMessage()); }

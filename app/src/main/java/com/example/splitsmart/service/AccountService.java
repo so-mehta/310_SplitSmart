@@ -13,7 +13,6 @@ public class AccountService {
     // Firebase Auth rejects anything shorter.
     private static final int MIN_PASSWORD_LENGTH = 6;
 
-    // TODO(Q2): replace with exact Project 2.1 text
     private static final String ERROR_NAME = "Enter your name.";
     private static final String ERROR_EMAIL = "Enter a valid USC email address.";
     private static final String ERROR_USC_ID = "USC ID must be exactly 10 digits.";

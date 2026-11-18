@@ -226,7 +226,7 @@ public class GroupDetailActivity extends AppCompatActivity {
                 case 2:
                     return new MemberListFragment();
                 default:
-                    return MonthlySummaryFragment.newInstance(groupId, userId, memberNames);
+                    return MonthlySummaryFragment.newInstance(groupId);
             }
         }
 

@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.*;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import com.example.splitsmart.R;
 import com.example.splitsmart.SplitSmartApp;
 import com.example.splitsmart.model.*;
 import com.example.splitsmart.ui.common.MoneyFormatter;
@@ -137,7 +138,7 @@ public class HistoryFragment extends Fragment {
     }
     @Override public void onResume() { super.onResume(); if (vm != null) vm.refresh(); }
     @Override public void onSaveInstanceState(@NonNull Bundle out) { out.putBoolean("filtersVisible", filtersVisible); super.onSaveInstanceState(out); }
-    private String name(String id) { return members.containsKey(id) ? members.get(id) : "Unknown member"; }
+    private String name(String id) { return members.containsKey(id) ? members.get(id) : getString(R.string.unknown_member); }
     private void renderStatus() {
         status.setText(Boolean.TRUE.equals(vm.busy.getValue()) ? "Loading..." : vm.error.getValue() != null ? vm.error.getValue() :
                 transactions.isEmpty() ? (vm.hasActiveFilters() ? "No transactions found" : "No transactions yet.") : "");
@@ -169,8 +170,7 @@ public class HistoryFragment extends Fragment {
         LinearLayout form = new LinearLayout(requireContext()); form.setOrientation(LinearLayout.VERTICAL); form.setPadding(48, 16, 48, 0);
         EditText amount = new EditText(requireContext()); amount.setHint("Amount (USD)");
         amount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        long cents = settlement.getAmountCents();
-        amount.setText(String.format(Locale.US, "%d.%02d", cents / 100, cents % 100)); form.addView(amount);
+        amount.setText(MoneyFormatter.editable(settlement.getAmountCents())); form.addView(amount);
         EditText noteInput = new EditText(requireContext()); noteInput.setHint("Note (optional)");
         noteInput.setText(settlement.getNote() == null ? "" : settlement.getNote()); form.addView(noteInput);
         new AlertDialog.Builder(requireContext()).setTitle("Edit settlement to " + name(settlement.getReceiverId()))

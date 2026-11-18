@@ -22,13 +22,12 @@ public class ExpenseService {
 
     private static final int MIN_PARTICIPANTS = 2;
 
-    // TODO(Q2): replace with exact Project 2.1 text
     private static final String ERROR_NO_GROUP = "This group no longer exists.";
     private static final String ERROR_NO_EXPENSE = "Expense does not exist.";
     private static final String ERROR_NOT_MEMBER = "You are not a member of this group.";
     private static final String ERROR_NOT_CREATOR = "Only the person who created this expense can change it.";
     private static final String ERROR_TITLE = "Enter an expense title.";
-    private static final String ERROR_AMOUNT = "Amount must be greater than 0.";
+    private static final String ERROR_AMOUNT = "Amount must be greater than zero.";
     private static final String ERROR_PAYER = "The payer must be a member of this group.";
     private static final String ERROR_PARTICIPANTS = "Select at least two participants.";
     private static final String ERROR_DUPLICATE_PARTICIPANT = "Each participant can only have one share.";
