@@ -1,0 +1,27 @@
+// Opt-in coverage for Simra's five new JUnit cases only. Does not change normal test runs.
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.api.tasks.testing.Test
+
+gradle.projectsEvaluated {
+    def app = gradle.rootProject.project(':app')
+    app.apply plugin: 'jacoco'
+    app.jacoco.toolVersion = '0.8.14'
+    app.tasks.withType(Test).configureEach {
+        filter { includeTestsMatching 'com.example.splitsmart.service.SimraExpenseServiceTest' }
+        jacoco { includes = ['com.example.splitsmart.service.ExpenseService*'] }
+    }
+    app.tasks.register('simraExpenseCoverage', JacocoReport) {
+        dependsOn app.tasks.named('testDebugUnitTest')
+        executionData.setFrom(app.layout.buildDirectory.file('jacoco/testDebugUnitTest.exec'))
+        classDirectories.setFrom(app.fileTree(app.layout.buildDirectory.dir('intermediates/javac/debug/compileDebugJavaWithJavac/classes')) {
+            include 'com/example/splitsmart/service/ExpenseService.class'
+        })
+        sourceDirectories.setFrom(app.files('src/main/java'))
+        reports {
+            xml.required = true
+            html.required = true
+            xml.outputLocation = app.layout.buildDirectory.file('reports/jacoco/simraExpenseCoverage/report.xml')
+            html.outputLocation = app.layout.buildDirectory.dir('reports/jacoco/simraExpenseCoverage/html')
+        }
+    }
+}
