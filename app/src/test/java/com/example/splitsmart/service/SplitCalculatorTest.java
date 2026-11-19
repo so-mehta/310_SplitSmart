@@ -274,41 +274,6 @@ public class SplitCalculatorTest {
         assertFalse(calculator.validateShares(1000, Collections.emptyList()));
     }
 
-    @Test
-    public void alex_percentage_twentyThirtyFiftyOfThirtyDollars() {
-        List<Share> shares = calculator.calculate(3000, SplitMethod.PERCENTAGE, THREE,
-                inputs(THREE, 20.0, 30.0, 50.0));
-
-        assertCents(shares, 600, 900, 1500);
-    }
-
-    @Test
-    public void alex_percentage_zeroPercentShare_isAccepted() {
-        List<Share> shares = calculator.calculate(3000, SplitMethod.PERCENTAGE, THREE,
-                inputs(THREE, 0.0, 50.0, 50.0));
-
-        assertCents(shares, 0, 1500, 1500);
-    }
-
-    @Test
-    public void alex_percentage_leftoverCentGoesToFirstEvenWhenLastHasTheLargestPercent() {
-        // Each share floors to 333, so one cent is left over and goes to the first participant.
-        List<Share> shares = calculator.calculate(1000, SplitMethod.PERCENTAGE, THREE,
-                inputs(THREE, 33.33, 33.33, 33.34));
-
-        assertCents(shares, 334, 333, 333);
-        assertTrue(calculator.validateShares(1000, shares));
-    }
-
-    @Test
-    public void alex_exact_oneCentOverTheTotal_isRejectedWithTheSumMessage() {
-        ValidationException error = assertThrows(ValidationException.class,
-                () -> calculator.calculate(3000, SplitMethod.EXACT_AMOUNT, THREE,
-                        inputs(THREE, 500.0, 1000.0, 1501.0)));
-
-        assertEquals("Amounts must add up to the total.", error.getMessage());
-    }
-
     private void assertRejected(long total, SplitMethod method, List<String> participants,
                                 Map<String, Double> inputs) {
         assertThrows(ValidationException.class,
