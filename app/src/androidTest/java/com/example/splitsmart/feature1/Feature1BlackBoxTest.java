@@ -205,7 +205,7 @@ public class Feature1BlackBoxTest {
         SplitSmartApp app = ApplicationProvider.getApplicationContext();
         String ownerMeta = app.getString(R.string.group_meta_owner,
                 app.getResources().getQuantityString(R.plurals.member_count, 1, 1));
-        onView(withText(ownerMeta)).check(matches(isDisplayed()));
+        waitForText(ownerMeta);
 
         // Reopen the app: the user is still logged in and the saved group is still there.
         closeScreens();
